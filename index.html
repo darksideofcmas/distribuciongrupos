@@ -361,6 +361,7 @@
 
         function handleDragEnd(e) {
             this.classList.remove('dragging');
+            this.style.opacity = '1'; // Asegurar que siempre recupere su visibilidad al terminar
             draggedItem = null;
             
             // Limpiar estilos de dropzone
@@ -393,18 +394,22 @@
         }
 
         function handleDrop(e) {
+            e.preventDefault(); // Prevenir comportamientos por defecto del navegador
             e.stopPropagation();
             let dropzone = e.target.closest('.dropzone');
             
             if (dropzone && draggedItem) {
                 dropzone.classList.remove('drag-over');
                 
+                // Guardamos la referencia en una variable local para que no se pierda
+                let item = draggedItem; 
+                
                 // Animar entrada suave
-                draggedItem.style.opacity = '0';
-                dropzone.appendChild(draggedItem);
+                item.style.opacity = '0';
+                dropzone.appendChild(item);
                 
                 setTimeout(() => {
-                    draggedItem.style.opacity = '1';
+                    if (item) item.style.opacity = '1';
                 }, 50);
 
                 // Actualizar contadores
