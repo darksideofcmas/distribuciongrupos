@@ -135,21 +135,10 @@
 </head>
 <body class="h-screen flex flex-col relative">
 
-    <!-- Pantalla de Carga y Diagnóstico -->
-    <div id="loading-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
+    <!-- Pantalla de Carga Limpia -->
+    <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" id="loading-spinner"></div>
-        <p id="loading-text" class="text-gray-800 font-medium text-lg">Iniciando Servidor...</p>
-        <p class="text-blue-600 font-semibold text-sm mt-2" id="loading-step">Preparando entorno...</p>
-        
-        <!-- Consola de Diagnóstico -->
-        <div id="debug-log" class="mt-4 w-full max-w-md bg-gray-900 text-green-400 border border-gray-700 rounded p-3 text-xs font-mono h-32 overflow-y-auto text-left shadow-inner flex flex-col gap-1">
-            <!-- Los logs aparecerán aquí -->
-        </div>
-
-        <button onclick="window.startLocalFallback && window.startLocalFallback()" id="fallback-btn" class="mt-6 px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 text-sm font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            Saltar y usar Modo Local
-        </button>
+        <p id="loading-text" class="text-gray-800 font-medium text-lg">Sincronizando grupos...</p>
     </div>
 
     <!-- Menú Superior (Mac Menu Bar) -->
@@ -207,37 +196,8 @@
         </div>
     </div>
 
-    <!-- SCRIPT GUARDIÁN ANTI-CUELGUES -->
-    <script>
-        window.appCodeStarted = false;
-        
-        // Si a los 2 segundos el código principal no ha arrancado, significa que se rompió por un error de sintaxis al pegar las claves.
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                if (!window.appCodeStarted) {
-                    document.getElementById('loading-spinner').style.display = 'none';
-                    document.getElementById('loading-step').innerHTML = "<span class='text-red-500'>❌ ERROR CRÍTICO DE SINTAXIS</span>";
-                    document.getElementById('debug-log').innerHTML = 
-                        "<div class='text-red-400 font-bold'>> El motor se rompió antes de iniciar.</div>" +
-                        "<div class='text-yellow-300 mt-2'>> MOTIVO: Al pegar tus claves en GitHub borraste por accidente una comilla (\"), una coma (,) o una llave (}).</div>" +
-                        "<div class='text-white mt-2'>> Por favor revisa con cuidado el bloque 'firebaseConfig'.</div>";
-                    
-                    // Asegurar que el botón de emergencia funcione para forzar el cierre
-                    const btn = document.getElementById('fallback-btn');
-                    btn.onclick = function() {
-                        document.getElementById('loading-overlay').style.display = 'none';
-                        document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-red-100 text-red-800 px-2 py-1 rounded ml-2 border border-red-300">SINTAXIS ROTA</span>';
-                    };
-                }
-            }, 2500);
-        });
-    </script>
-
     <!-- Script principal Firebase y Lógica -->
     <script type="module">
-        // ESTA ES LA SEÑAL DE QUE EL CÓDIGO SÍ SE PUDO LEER CORRECTAMENTE
-        window.appCodeStarted = true;
-
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -246,9 +206,6 @@
         // 🚨 CONFIGURACIÓN DE FIREBASE PARA GITHUB 🚨
         // ==========================================
         
-        // ⚠️ INSTRUCCIONES: Solo reemplaza los textos "TU_API_KEY", etc. por tus valores reales.
-        // ⚠️ ¡NO BORRES LAS COMILLAS (" ") NI LAS COMAS (,) DEL FINAL!
-        
         const firebaseConfig = {
             apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
             authDomain: "basesdedatos-8545b.firebaseapp.com",
@@ -256,21 +213,6 @@
             storageBucket: "basesdedatos-8545b.firebasestorage.app",
             messagingSenderId: "423832305020",
             appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"
-        };
-
-        // --- SISTEMA DE LOGS ---
-        function logDebug(msg, isError = false) {
-            console.log(msg);
-            const logEl = document.getElementById('debug-log');
-            if(logEl) {
-                const color = isError ? 'text-red-400 font-bold' : 'text-green-400';
-                logEl.innerHTML += `<div class="${color}">> ${msg}</div>`;
-                logEl.scrollTop = logEl.scrollHeight;
-            }
-        }
-        
-        window.onerror = function(msg, url, line) {
-            logDebug(`Error JS Crítico: ${msg} (Línea ${line})`, true);
         };
 
         // Variables Globales
@@ -328,41 +270,28 @@
         ];
 
         // INICIALIZACIÓN
-        logDebug("Iniciando motor de sincronización...");
-        
-        if (!isConfigured) {
-            logDebug("Aviso: Ejecutando en Modo Prueba (Claves no insertadas).", true);
+        if (isConfigured) {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            initAuth();
         } else {
-            try {
-                logDebug("Claves detectadas. Inicializando conexión...");
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                logDebug("App conectada. Iniciando verificación de identidad...");
-                initAuth();
-            } catch (err) {
-                logDebug(`Error inicializando motor: ${err.message}`, true);
-            }
+            // Fallback silencioso si faltan las claves
+            loadSubjectLocally(currentSubject);
         }
 
         async function initAuth() {
-            document.getElementById('loading-step').textContent = "Paso 1: Autenticando servidor...";
-
             onAuthStateChanged(auth, (user) => {
                 if (user) {
-                    logDebug(`¡Identidad confirmada! UID: ${user.uid.substring(0,6)}...`);
-                    document.getElementById('loading-step').textContent = "Paso 2: Descargando datos...";
                     startCloudSync();
-                } else {
-                    logDebug("Sin sesión activa.");
                 }
             });
 
             try {
-                logDebug("Pidiendo permiso anónimo de entrada...");
                 await signInAnonymously(auth);
             } catch (error) {
-                logDebug(`Error de Permisos: ${error.message}`, true);
+                console.error("Error de Autenticación:", error);
+                loadSubjectLocally(currentSubject);
             }
         }
 
@@ -372,13 +301,10 @@
         function startCloudSync() {
             if (!auth.currentUser || isSyncing) return;
             isSyncing = true;
-            logDebug("Configurando canales de escucha en tiempo real...");
 
             const globalRef = doc(db, 'organizador_grupos', 'config_global');
-            logDebug("Llamando documento de seguridad...");
             
             unsubscribeGlobal = onSnapshot(globalRef, (docSnap) => {
-                logDebug("Lectura exitosa: config_global");
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     isLocked = data.isLocked || false;
@@ -388,9 +314,7 @@
                     globalPassword = "";
                 }
                 applyLockState();
-            }, (error) => {
-                logDebug(`Rechazo de Firebase (config): ${error.message}`, true);
-            });
+            }, (error) => console.error("Error global:", error));
 
             loadSubjectFromCloud(currentSubject);
         }
@@ -399,17 +323,14 @@
             if (unsubscribeGroups) unsubscribeGroups(); 
             
             const subjectRef = doc(db, 'organizador_grupos', `estado_${subject}`);
-            logDebug(`Llamando datos de la materia: ${subject}...`);
             
             unsubscribeGroups = onSnapshot(subjectRef, (docSnap) => {
-                logDebug(`¡Datos de ${subject} recibidos y validados!`);
                 let newData = [];
                 let isFirstTime = false;
 
                 if (docSnap.exists() && docSnap.data().groups) {
                     newData = docSnap.data().groups;
                 } else {
-                    logDebug("Base de datos nueva, estructurando estudiantes...");
                     newData = JSON.parse(JSON.stringify(initialData));
                     isFirstTime = true;
                 }
@@ -436,43 +357,36 @@
                 } else {
                     currentData = newData;
                     renderGroups();
-                    
-                    const loader = document.getElementById('loading-overlay');
-                    if (loader && !loader.classList.contains('hidden')) {
-                        logDebug("✅ Arranque completado. Abriendo aplicación...");
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.classList.add('hidden'), 500);
-                    }
+                    hideLoader();
                 }
                 saveStateCore(newData);
             }, (error) => {
-                logDebug(`Rechazo de Base de Datos: ${error.message}`, true);
-                if (error.message.includes("Missing or insufficient permissions")) {
-                     logDebug("⚠️ IMPORTANTE: Necesitas ir a Firebase > Firestore > Reglas y poner: allow read, write: if true;", true);
-                }
+                console.error("Error base de datos:", error);
+                loadSubjectLocally(currentSubject);
             });
         }
 
-        // ==========================================
-        // MODO LOCAL (Fallback manual)
-        // ==========================================
-        window.startLocalFallback = function() {
-            logDebug("Cambiando forzosamente a Modo Local...");
+        function hideLoader() {
             const loader = document.getElementById('loading-overlay');
-            if (loader) loader.classList.add('hidden');
-            
-            document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">MODO LOCAL</span>';
-            document.getElementById('main-subtitle').textContent = "Página aislada. No hay conexión con el servidor.";
+            if (loader && !loader.classList.contains('hidden')) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 500);
+            }
+        }
 
-            const savedData = localStorage.getItem(`mac_groups_data_${currentSubject}`);
+        // ==========================================
+        // MODO LOCAL (Fallback automático)
+        // ==========================================
+        function loadSubjectLocally(subject) {
+            hideLoader();
+            const savedData = localStorage.getItem(`mac_groups_data_${subject}`);
             if (savedData) currentData = JSON.parse(savedData);
             else currentData = JSON.parse(JSON.stringify(initialData));
 
             isLocked = localStorage.getItem('mac_groups_locked') === 'true';
             globalPassword = localStorage.getItem('mac_groups_pwd') || "";
-
             renderGroups();
-        };
+        }
 
         // ==========================================
         // GUARDADO UNIFICADO
@@ -502,7 +416,7 @@
             if (isConfigured && auth && auth.currentUser) {
                 try {
                     await setDoc(doc(db, 'organizador_grupos', `estado_${currentSubject}`), { groups: stateToSave }, { merge: true });
-                } catch (e) { logDebug(`Fallo al guardar: ${e.message}`, true); }
+                } catch (e) { console.error("Error al guardar:", e); }
             } else {
                 localStorage.setItem(`mac_groups_data_${currentSubject}`, JSON.stringify(stateToSave));
             }
@@ -518,11 +432,7 @@
             document.getElementById(`tab-${subject}`).classList.add('active');
             
             if (isConfigured && auth && auth.currentUser) loadSubjectFromCloud(currentSubject);
-            else {
-                const savedData = localStorage.getItem(`mac_groups_data_${currentSubject}`);
-                currentData = savedData ? JSON.parse(savedData) : JSON.parse(JSON.stringify(initialData));
-                renderGroups();
-            }
+            else loadSubjectLocally(currentSubject);
         };
 
         window.saveState = () => saveStateCore();
