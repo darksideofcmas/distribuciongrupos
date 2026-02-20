@@ -520,6 +520,7 @@
                 const windowEl = document.createElement('div');
                 windowEl.className = 'mac-window h-full flex flex-col';
 
+                // 1. CABECERA
                 const header = document.createElement('div');
                 header.className = 'px-4 py-3 border-b border-white/40 flex items-center bg-white/30 rounded-t-xl';
                 header.innerHTML = `
@@ -534,13 +535,38 @@
                     </div>
                 `;
 
+                // 2. ZONA DE ESTUDIANTES (Ahora va en el medio)
+                const dropzone = document.createElement('div');
+                dropzone.className = 'dropzone';
+                dropzone.style.borderRadius = '0'; // Se le quita la curva abajo para dársela al recuadro del tema
+                dropzone.id = group.id;
+
+                dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
+                dropzone.addEventListener('dragenter', (e) => { e.preventDefault(); let t = e.target.closest('.dropzone'); if (t) t.classList.add('drag-over'); });
+                dropzone.addEventListener('dragleave', (e) => { let t = e.target.closest('.dropzone'); if (t && !t.contains(e.relatedTarget)) t.classList.remove('drag-over'); });
+                dropzone.addEventListener('drop', handleDrop);
+
+                group.students.forEach(student => { dropzone.appendChild(createStudentCard(student)); });
+
+                // 3. ZONA DEL TEMA (Ahora va abajo y es un Textarea ajustable)
                 const topicContainer = document.createElement('div');
-                topicContainer.className = 'px-3 py-2 bg-white/40 border-b border-white/50';
+                topicContainer.className = 'px-3 py-3 bg-white/40 border-t border-white/50 mt-auto rounded-b-xl';
+                
                 if(group.id !== 'unassigned') {
-                    topicContainer.innerHTML = `<input type="text" class="topic-input w-full bg-white/60 border border-gray-200/60 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all font-medium" placeholder="Asignar tema de exposición..." value="${group.topic || ''}" onchange="saveState()">`;
+                    topicContainer.innerHTML = `<textarea class="topic-input w-full bg-white/60 border border-gray-200/60 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all font-medium resize-y min-h-[65px]" placeholder="Asignar tema de exposición... (Arrastra la esquina para agrandar)" onchange="saveState()">${group.topic || ''}</textarea>`;
                 } else {
-                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-1 text-center italic">Zona de reasignación</div>`;
+                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-2 text-center italic">Zona de reasignación (Sin tema)</div>`;
                 }
+
+                // ARMADO DE LA VENTANA (Orden cambiado)
+                windowEl.appendChild(header);
+                windowEl.appendChild(dropzone);
+                windowEl.appendChild(topicContainer);
+                
+                container.appendChild(windowEl);
+            });
+            applyLockState();
+        }
 
                 const dropzone = document.createElement('div');
                 dropzone.className = 'dropzone';
