@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organización de Grupos</title>
+    <title>Organización de Grupos - Estilo Mac</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Tipografía del sistema de Apple */
@@ -47,7 +47,6 @@
             padding: 12px;
             min-height: 150px;
             transition: all 0.2s ease;
-            border-radius: 0 0 12px 12px;
         }
 
         .dropzone.drag-over {
@@ -138,7 +137,7 @@
     <!-- Pantalla de Carga Limpia -->
     <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" id="loading-spinner"></div>
-        <p id="loading-text" class="text-gray-800 font-medium text-lg">Sincronizando grupos...</p>
+        <p id="loading-text" class="text-gray-800 font-medium text-lg">Cargando datos...</p>
     </div>
 
     <!-- Menú Superior (Mac Menu Bar) -->
@@ -166,7 +165,7 @@
         <div class="flex justify-between items-end">
             <div>
                 <h1 id="main-title" class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo</h1>
-                <p id="main-subtitle" class="text-gray-700 mt-1 font-medium">Grupo 39 de Derecho - Los cambios se guardan y reflejan para todos en tiempo real</p>
+                <p id="main-subtitle" class="text-gray-700 mt-1 font-medium">Grupo 38 de Derecho - Los cambios se guardan y reflejan para todos en tiempo real</p>
             </div>
         </div>
 
@@ -512,6 +511,9 @@
             if (e.key === 'Enter') window.submitPassword();
         });
 
+        // ==========================================
+        // DIBUJADO DE LA INTERFAZ CON TEXTAREA INFERIOR
+        // ==========================================
         function renderGroups() {
             const container = document.getElementById('groups-container');
             container.innerHTML = '';
@@ -535,10 +537,10 @@
                     </div>
                 `;
 
-                // 2. ZONA DE ESTUDIANTES (Ahora va en el medio)
+                // 2. ZONA DE ESTUDIANTES (En el medio)
                 const dropzone = document.createElement('div');
                 dropzone.className = 'dropzone';
-                dropzone.style.borderRadius = '0'; // Se le quita la curva abajo para dársela al recuadro del tema
+                dropzone.style.borderRadius = '0'; // Se quita el borde curvo inferior
                 dropzone.id = group.id;
 
                 dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
@@ -548,7 +550,7 @@
 
                 group.students.forEach(student => { dropzone.appendChild(createStudentCard(student)); });
 
-                // 3. ZONA DEL TEMA (Ahora va abajo y es un Textarea ajustable)
+                // 3. ZONA DEL TEMA (Textarea en la parte inferior)
                 const topicContainer = document.createElement('div');
                 topicContainer.className = 'px-3 py-3 bg-white/40 border-t border-white/50 mt-auto rounded-b-xl';
                 
@@ -558,30 +560,11 @@
                     topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-2 text-center italic">Zona de reasignación (Sin tema)</div>`;
                 }
 
-                // ARMADO DE LA VENTANA (Orden cambiado)
+                // Armado final de la ventana
                 windowEl.appendChild(header);
                 windowEl.appendChild(dropzone);
                 windowEl.appendChild(topicContainer);
                 
-                container.appendChild(windowEl);
-            });
-            applyLockState();
-        }
-
-                const dropzone = document.createElement('div');
-                dropzone.className = 'dropzone';
-                dropzone.id = group.id;
-
-                dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
-                dropzone.addEventListener('dragenter', (e) => { e.preventDefault(); let t = e.target.closest('.dropzone'); if (t) t.classList.add('drag-over'); });
-                dropzone.addEventListener('dragleave', (e) => { let t = e.target.closest('.dropzone'); if (t && !t.contains(e.relatedTarget)) t.classList.remove('drag-over'); });
-                dropzone.addEventListener('drop', handleDrop);
-
-                group.students.forEach(student => { dropzone.appendChild(createStudentCard(student)); });
-
-                windowEl.appendChild(header);
-                windowEl.appendChild(topicContainer);
-                windowEl.appendChild(dropzone);
                 container.appendChild(windowEl);
             });
             applyLockState();
