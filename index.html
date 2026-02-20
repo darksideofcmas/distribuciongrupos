@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organización de Grupos - Grupo 39 de Derecho</title>
+    <title>Organización de Grupos - Estilo Mac</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Tipografía del sistema de Apple */
@@ -238,6 +238,32 @@
                 { id: "92182", name: "Natalia Espejo Pallares" },
                 { id: "92200", name: "Luis Fernando Olivera Arevalo" },
                 { id: "92368", name: "Roberto Giraldo Veloza" }
+            ]},
+            { id: "group-8", title: "Grupo 8", color: "pink", topic: "", students: [
+                { id: "90691", name: "Crystel Yohana Moreno Perez" },
+                { id: "91006", name: "Carlos Mario Agamez Seña" },
+                { id: "91007", name: "Magda Marleny Cardenas Suarez" },
+                { id: "91420", name: "Diana Catalina Mora Romero" }
+            ]},
+            { id: "group-9", title: "Grupo 9", color: "cyan", topic: "", students: [
+                { id: "91356", name: "Hermann Buitrago Otalvaro" },
+                { id: "92166", name: "Eder Mauricio Suescun Alsina" },
+                { id: "92374", name: "Alexander Romero Ovalle" },
+                { id: "92644", name: "Kimberly Tatiana Martinez Retavisca" },
+                { id: "92645", name: "Luis Carlos Diaz Lozano" }
+            ]},
+            { id: "group-10", title: "Grupo 10", color: "lime", topic: "", students: [
+                { id: "90595", name: "Alexander Castañeda Rodriguez" },
+                { id: "91015", name: "Alexander Lopez Barona" },
+                { id: "91412", name: "Katherine Duran Roa" }
+            ]},
+            { id: "group-11", title: "Grupo 11", color: "yellow", topic: "", students: [
+                { id: "91409", name: "Diana Carolina Bejarano Arias" }
+            ]},
+            { id: "group-12", title: "Grupo 12", color: "rose", topic: "", students: [
+                { id: "91661", name: "Nelcy Aldana Carrillo" },
+                { id: "92178", name: "Leidy Maria Barros Lesmes" },
+                { id: "92193", name: "Adriana Quintero Giral" }
             ]},
             { id: "unassigned", title: "Sin Asignar (Reserva)", color: "gray", topic: "", students: [] } // Zona útil para mover temporalmente
         ];
@@ -498,6 +524,31 @@
             
             if (savedData) {
                 currentData = JSON.parse(savedData);
+                // Asegurar que si hay grupos nuevos en initialData (como del 8 al 12), se agreguen aunque haya datos guardados
+                initialData.forEach(initGroup => {
+                    if (!currentData.find(g => g.id === initGroup.id)) {
+                        // Insertar justo antes del grupo "unassigned" para mantener el orden visual
+                        const unassignedIndex = currentData.findIndex(g => g.id === 'unassigned');
+                        if (unassignedIndex !== -1) {
+                            currentData.splice(unassignedIndex, 0, JSON.parse(JSON.stringify(initGroup)));
+                        } else {
+                            currentData.push(JSON.parse(JSON.stringify(initGroup)));
+                        }
+                    }
+                    
+                    // Detectar estudiantes nuevos e inyectarlos si no existen en la base de datos guardada localmente
+                    initGroup.students.forEach(initStudent => {
+                        let studentExists = false;
+                        currentData.forEach(g => {
+                            if (g.students.find(s => s.id === initStudent.id)) studentExists = true;
+                        });
+                        
+                        if (!studentExists) {
+                            const targetGroup = currentData.find(g => g.id === initGroup.id);
+                            if (targetGroup) targetGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
+                        }
+                    });
+                });
             } else {
                 currentData = JSON.parse(JSON.stringify(initialData)); // Copia profunda
             }
