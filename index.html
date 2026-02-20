@@ -135,17 +135,16 @@
 </head>
 <body class="h-screen flex flex-col relative">
 
-    <!-- Pantalla de Carga de la Nube -->
+    <!-- Pantalla de Carga -->
     <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loading-text" class="text-gray-800 font-medium text-lg">Conectando con la nube...</p>
-        <p class="text-gray-500 text-sm mt-2">Sincronizando estado global</p>
+        <p id="loading-text" class="text-gray-800 font-medium text-lg">Conectando...</p>
+        <p class="text-gray-500 text-sm mt-2" id="loading-subtext">Verificando configuración</p>
     </div>
 
     <!-- Menú Superior (Mac Menu Bar) -->
     <nav class="mac-menubar h-7 w-full flex items-center justify-between px-4 z-50 fixed top-0">
         <div class="flex items-center gap-4">
-            <!-- Icono de Apple simulado -->
             <svg class="w-4 h-4 text-black" viewBox="0 0 384 512" fill="currentColor">
                 <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
             </svg>
@@ -165,29 +164,21 @@
 
     <!-- Área Principal -->
     <main class="flex-1 mt-7 p-6 overflow-hidden flex flex-col gap-2">
-        
         <div class="flex justify-between items-end">
             <div>
-                <h1 class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo Sincronizados</h1>
-                <p class="text-gray-700 mt-1 font-medium">Grupo 38 de Derecho - Los cambios se guardan y reflejan para todos en tiempo real</p>
+                <h1 id="main-title" class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo Sincronizados</h1>
+                <p id="main-subtitle" class="text-gray-700 mt-1 font-medium">Grupo 38 de Derecho - Los cambios se guardan y reflejan para todos en tiempo real</p>
             </div>
         </div>
 
-        <!-- Pestañas de Asignaturas -->
         <div class="flex mt-4 border-b border-white/50 relative z-10">
-            <button id="tab-familia" class="tab-btn active" onclick="switchSubject('familia')">
-                Civil Familia
-            </button>
-            <button id="tab-obligaciones" class="tab-btn ml-1" onclick="switchSubject('obligaciones')">
-                Civil Obligaciones
-            </button>
+            <button id="tab-familia" class="tab-btn active" onclick="switchSubject('familia')">Civil Familia</button>
+            <button id="tab-obligaciones" class="tab-btn ml-1" onclick="switchSubject('obligaciones')">Civil Obligaciones</button>
         </div>
 
-        <!-- Contenedor de las ventanas/grupos -->
         <div id="groups-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full overflow-y-auto pt-4 pb-10 bg-white/10 rounded-b-xl px-2">
-            <!-- Las ventanas se generarán aquí mediante JavaScript -->
+            <!-- Las ventanas se generarán aquí -->
         </div>
-
     </main>
 
     <!-- Modal de Contraseña -->
@@ -197,7 +188,7 @@
                 <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
             <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-1">Seguridad del Administrador</h3>
-            <p id="modal-desc" class="text-sm text-gray-600 mb-4">Ingresa la contraseña maestra del servidor.</p>
+            <p id="modal-desc" class="text-sm text-gray-600 mb-4">Ingresa la contraseña maestra.</p>
             <input type="password" id="password-input" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 mb-4" placeholder="Contraseña...">
             <div class="flex gap-2">
                 <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md transition-colors">Cancelar</button>
@@ -206,21 +197,42 @@
         </div>
     </div>
 
-    <!-- Script tipo módulo para manejar Firebase -->
+    <!-- Firebase y Lógica -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Variables Globales de Estado
+        // ==========================================
+        // 🚨 CONFIGURACIÓN DE FIREBASE (TU PROYECTO) 🚨
+        // Reemplaza los valores de "PEGAR_AQUI" con los de tu consola de Firebase
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "PEGAR_AQUI",
+            authDomain: "PEGAR_AQUI",
+            projectId: "PEGAR_AQUI",
+            storageBucket: "PEGAR_AQUI",
+            messagingSenderId: "PEGAR_AQUI",
+            appId: "PEGAR_AQUI"
+        };
+
+        // Verificación para saber si el usuario ya pegó sus claves
+        const isCloudEnv = firebaseConfig.apiKey !== "apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
+  authDomain: "basesdedatos-8545b.firebaseapp.com",
+  projectId: "basesdedatos-8545b",
+  storageBucket: "basesdedatos-8545b.firebasestorage.app",
+  messagingSenderId: "423832305020",
+  appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"" && firebaseConfig.apiKey !== "";
+
+        // Variables Globales
         let isLocked = false;
         let globalPassword = "";
         let currentSubject = 'familia';
         let currentData = [];
         let draggedItem = null;
-        let pendingUpdate = null; // Para no interrumpir la pantalla si alguien arrastra algo
+        let pendingUpdate = null;
         
-        let db, auth, appId;
+        let db, auth;
         let unsubscribeGroups = null;
         let unsubscribeGlobal = null;
 
@@ -265,49 +277,96 @@
             { id: "unassigned", title: "Sin Asignar (Reserva)", color: "gray", topic: "", students: [] }
         ];
 
-        // INICIALIZACIÓN DE FIREBASE PARA SINCRONIZACIÓN EN LA NUBE
-        const isCloudEnv = typeof __firebase_config !== 'undefined';
-        
+        // INICIALIZACIÓN
         if (isCloudEnv) {
-            const firebaseConfig = JSON.parse(__firebase_config);
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            
-            // Iniciar Autenticación y luego datos
             initAuth();
         } else {
-            document.getElementById('loading-text').textContent = "Error: Falta configuración del Servidor";
-            alert("Este panel requiere estar alojado en el entorno oficial para sincronizar datos.");
+            document.getElementById('loading-text').textContent = "Iniciando Modo Local";
+            document.getElementById('loading-subtext').textContent = "Para sincronizar, añade tus credenciales de Firebase en el código.";
+            setTimeout(() => startLocalSync(), 1500);
         }
 
+        // ==========================================
+        // MODO LOCAL (Si no se configuran las claves)
+        // ==========================================
+        function startLocalSync() {
+            document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">Modo Local Offline</span>';
+            document.getElementById('main-subtitle').textContent = "Aviso: No se detectó configuración de Firebase. Los cambios solo se guardan en este navegador.";
+
+            const savedLock = localStorage.getItem('mac_groups_locked');
+            isLocked = savedLock === 'true';
+            globalPassword = localStorage.getItem('mac_groups_pwd') || "";
+
+            loadSubjectFromLocal(currentSubject);
+        }
+
+        function loadSubjectFromLocal(subject) {
+            const savedData = localStorage.getItem(`mac_groups_data_${subject}`);
+            let newData = [];
+            let isFirstTime = false;
+
+            if (savedData) {
+                newData = JSON.parse(savedData);
+            } else {
+                newData = JSON.parse(JSON.stringify(initialData));
+                isFirstTime = true;
+            }
+
+            // Inyectar nuevos estudiantes (como del grupo 8 al 12) si no estaban
+            if (!isFirstTime) {
+                initialData.forEach(initGroup => {
+                    let existingGroup = newData.find(g => g.id === initGroup.id);
+                    if (!existingGroup) {
+                        const unIndex = newData.findIndex(g => g.id === 'unassigned');
+                        if (unIndex !== -1) newData.splice(unIndex, 0, JSON.parse(JSON.stringify(initGroup)));
+                        else newData.push(JSON.parse(JSON.stringify(initGroup)));
+                    } else {
+                        initGroup.students.forEach(initStudent => {
+                            let studentExists = false;
+                            newData.forEach(g => { if (g.students.find(s => s.id === initStudent.id)) studentExists = true; });
+                            if (!studentExists) existingGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
+                        });
+                    }
+                });
+            }
+
+            currentData = newData;
+            renderGroups();
+            
+            const loader = document.getElementById('loading-overlay');
+            if (loader && !loader.classList.contains('hidden')) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.classList.add('hidden'), 500);
+            }
+            saveStateCore(newData);
+        }
+
+        // ==========================================
+        // MODO NUBE (Con tus claves de Firebase configuradas)
+        // ==========================================
         async function initAuth() {
             onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    startCloudSync(); // Comenzar a sincronizar solo cuando haya conexión segura
-                }
+                if (user) startCloudSync();
             });
 
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
                 console.error("Auth error:", error);
-                document.getElementById('loading-text').textContent = "Error de conexión segura.";
+                document.getElementById('loading-text').textContent = "Error de conexión. Revisa tus claves de Firebase.";
+                document.getElementById('loading-subtext').textContent = error.message;
             }
         }
-
-        // ---- LÓGICA DE SINCRONIZACIÓN EN TIEMPO REAL ----
 
         function startCloudSync() {
             if (!auth.currentUser) return;
 
-            // 1. Suscribirse a la configuración global de seguridad (contraseñas/bloqueos compartidos)
-            const globalRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', 'global_settings');
+            // Ruta oficial para tu base de datos
+            const globalRef = doc(db, 'mac_groups', 'global_settings');
+            
             unsubscribeGlobal = onSnapshot(globalRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -318,82 +377,64 @@
                     globalPassword = "";
                 }
                 applyLockState();
-            }, (error) => console.error("Sync Error Global:", error));
+            }, (error) => console.error("Error Global:", error));
 
-            // 2. Suscribirse a la asignatura inicial
             loadSubjectFromCloud(currentSubject);
         }
 
         function loadSubjectFromCloud(subject) {
-            if (unsubscribeGroups) unsubscribeGroups(); // Desconectar de la anterior si se cambió de pestaña
+            if (unsubscribeGroups) unsubscribeGroups(); 
             
-            const subjectRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', `state_${subject}`);
+            const subjectRef = doc(db, 'mac_groups', `state_${subject}`);
             
             unsubscribeGroups = onSnapshot(subjectRef, (docSnap) => {
                 let newData = [];
                 let isFirstTime = false;
-                let dataWasInjected = false;
 
                 if (docSnap.exists() && docSnap.data().groups) {
                     newData = docSnap.data().groups;
                 } else {
-                    // Si el servidor no tiene datos para esta asignatura, los creamos
                     newData = JSON.parse(JSON.stringify(initialData));
                     isFirstTime = true;
                 }
 
-                // Inyectar estudiantes nuevos del código si faltan en la base de datos de la nube
                 if (!isFirstTime) {
                     initialData.forEach(initGroup => {
                         let existingGroup = newData.find(g => g.id === initGroup.id);
                         if (!existingGroup) {
                             const unIndex = newData.findIndex(g => g.id === 'unassigned');
-                            if (unIndex !== -1) {
-                                newData.splice(unIndex, 0, JSON.parse(JSON.stringify(initGroup)));
-                            } else {
-                                newData.push(JSON.parse(JSON.stringify(initGroup)));
-                            }
-                            dataWasInjected = true;
+                            if (unIndex !== -1) newData.splice(unIndex, 0, JSON.parse(JSON.stringify(initGroup)));
+                            else newData.push(JSON.parse(JSON.stringify(initGroup)));
                         } else {
                             initGroup.students.forEach(initStudent => {
                                 let studentExists = false;
                                 newData.forEach(g => { if (g.students.find(s => s.id === initStudent.id)) studentExists = true; });
-                                if (!studentExists) {
-                                    existingGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
-                                    dataWasInjected = true;
-                                }
+                                if (!studentExists) existingGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
                             });
                         }
                     });
                 }
 
-                // Controlar experiencia de usuario: no interrumpir visualmente si alguien está arrastrando una tarjeta
                 if (draggedItem) {
-                    pendingUpdate = newData; // Guardar actualización para cuando termine de soltar
+                    pendingUpdate = newData;
                 } else {
                     currentData = newData;
                     renderGroups();
                     
-                    // Ocultar pantalla de carga la primera vez que todo carga
                     const loader = document.getElementById('loading-overlay');
                     if (loader && !loader.classList.contains('hidden')) {
                         loader.style.opacity = '0';
                         setTimeout(() => loader.classList.add('hidden'), 500);
                     }
                 }
-
-                // Si añadimos estudiantes automáticamente o era la primera vez, guardar los cambios limpios en la nube
-                if (isFirstTime || dataWasInjected) {
-                    saveStateToCloud(newData);
-                }
-
-            }, (error) => console.error("Sync Error Subject:", error));
+                saveStateCore(newData);
+            }, (error) => console.error("Error Leyendo Sujetos:", error));
         }
 
-        async function saveStateToCloud(stateArray = null) {
-            if (!auth.currentUser) return;
-            
-            // Construir el estado actual a partir de la interfaz (si no se proporciona un array directamente)
+        // ==========================================
+        // MOTOR UNIFICADO DE GUARDADO
+        // ==========================================
+        async function saveStateCore(stateArray = null) {
             let stateToSave = stateArray;
             if (!stateToSave) {
                 stateToSave = [];
@@ -414,29 +455,33 @@
                 });
             }
 
-            const subjectRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', `state_${currentSubject}`);
-            try {
-                await setDoc(subjectRef, { groups: stateToSave }, { merge: true });
-            } catch (error) {
-                console.error("No se pudo guardar en la nube:", error);
+            if (isCloudEnv) {
+                if (!auth || !auth.currentUser) return;
+                const subjectRef = doc(db, 'mac_groups', `state_${currentSubject}`);
+                try {
+                    await setDoc(subjectRef, { groups: stateToSave }, { merge: true });
+                } catch (error) {
+                    console.error("Error guardando:", error);
+                }
+            } else {
+                localStorage.setItem(`mac_groups_data_${currentSubject}`, JSON.stringify(stateToSave));
             }
         }
 
-        // ---- MÉTODOS EXPUESTOS A LA VENTANA GLOBAL (Necesario en type="module") ----
-        
+        // ==========================================
+        // FUNCIONES GLOBALES
+        // ==========================================
         window.switchSubject = (subject) => {
             if (draggedItem) return;
             currentSubject = subject;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${subject}`).classList.add('active');
             
-            // Al cambiar, cargamos desde la base de datos la nueva asignatura
-            loadSubjectFromCloud(currentSubject);
+            if (isCloudEnv) loadSubjectFromCloud(currentSubject);
+            else loadSubjectFromLocal(currentSubject);
         };
 
-        window.saveState = () => {
-            saveStateToCloud();
-        };
+        window.saveState = () => saveStateCore();
 
         window.openLockModal = () => {
             const modalTitle = document.getElementById('modal-title');
@@ -445,10 +490,10 @@
             
             if (!globalPassword) {
                 modalTitle.textContent = "Crear Contraseña Maestra";
-                modalDesc.textContent = "Nadie ha configurado una clave aún. Crea una para proteger el panel para todos los usuarios.";
+                modalDesc.textContent = "Nadie ha configurado una clave aún. Crea una para proteger el panel.";
             } else {
                 modalTitle.textContent = isLocked ? "Desbloquear Edición" : "Bloquear Edición";
-                modalDesc.textContent = isLocked ? "Ingresa la clave del administrador para permitir cambios a todos." : "Ingresa la clave para bloquear los grupos.";
+                modalDesc.textContent = isLocked ? "Ingresa la clave del administrador para permitir cambios." : "Ingresa la clave para bloquear los grupos.";
             }
             
             passInput.value = '';
@@ -456,33 +501,49 @@
             setTimeout(() => passInput.focus(), 100);
         };
 
-        window.closeModal = () => {
-            document.getElementById('password-modal').classList.add('hidden');
-        };
+        window.closeModal = () => document.getElementById('password-modal').classList.add('hidden');
 
         window.submitPassword = async () => {
             const passInput = document.getElementById('password-input');
             const inputVal = passInput.value;
             if (!inputVal) return;
 
-            const globalRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', 'global_settings');
-
-            if (!globalPassword) {
-                // Configurar nueva contraseña globalmente
-                try {
-                    await setDoc(globalRef, { password: inputVal, isLocked: true }, { merge: true });
-                    window.closeModal();
-                } catch(e) { alert("Error de servidor"); }
-            } else {
-                // Comprobar contraseña contra la de la nube
-                if (inputVal === globalPassword) {
+            if (isCloudEnv) {
+                const globalRef = doc(db, 'mac_groups', 'global_settings');
+                if (!globalPassword) {
                     try {
-                        await setDoc(globalRef, { isLocked: !isLocked }, { merge: true });
+                        await setDoc(globalRef, { password: inputVal, isLocked: true }, { merge: true });
                         window.closeModal();
-                    } catch(e) { alert("Error de servidor"); }
+                    } catch(e) { alert("Error al guardar clave en servidor"); }
                 } else {
-                    alert("Contraseña incorrecta. Inténtalo de nuevo.");
-                    passInput.focus();
+                    if (inputVal === globalPassword) {
+                        try {
+                            await setDoc(globalRef, { isLocked: !isLocked }, { merge: true });
+                            window.closeModal();
+                        } catch(e) { alert("Error conectando con servidor"); }
+                    } else {
+                        alert("Contraseña incorrecta.");
+                        passInput.focus();
+                    }
+                }
+            } else {
+                if (!globalPassword) {
+                    localStorage.setItem('mac_groups_pwd', inputVal);
+                    localStorage.setItem('mac_groups_locked', 'true');
+                    globalPassword = inputVal;
+                    isLocked = true;
+                    applyLockState();
+                    window.closeModal();
+                } else {
+                    if (inputVal === globalPassword) {
+                        isLocked = !isLocked;
+                        localStorage.setItem('mac_groups_locked', isLocked.toString());
+                        applyLockState();
+                        window.closeModal();
+                    } else {
+                        alert("Contraseña incorrecta.");
+                        passInput.focus();
+                    }
                 }
             }
         };
@@ -507,14 +568,13 @@
             dlAnchorElem.click();
         };
 
-        // Escuchar "Enter" en el input
         document.getElementById('password-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') window.submitPassword();
         });
 
-
-        // ---- INTERFAZ Y DRAG AND DROP (Modificado para sincronización) ----
-
+        // ==========================================
+        // INTERFAZ Y DRAG AND DROP
+        // ==========================================
         function renderGroups() {
             const container = document.getElementById('groups-container');
             container.innerHTML = '';
@@ -590,7 +650,6 @@
                 draggedItem = null;
                 document.querySelectorAll('.dropzone').forEach(zone => zone.classList.remove('drag-over'));
                 
-                // Si alguien hizo un cambio en la nube mientras yo arrastraba, aplicar ese cambio ahora
                 if (pendingUpdate) {
                     currentData = pendingUpdate;
                     renderGroups();
@@ -608,19 +667,15 @@
             if (dropzone && draggedItem) {
                 dropzone.classList.remove('drag-over');
                 let item = draggedItem; 
-                
                 item.style.opacity = '0';
                 dropzone.appendChild(item);
                 setTimeout(() => { if (item) item.style.opacity = '1'; }, 50);
 
-                // Forzar conteo en vivo
                 document.querySelectorAll('.dropzone').forEach(zone => {
                     const cnt = zone.querySelectorAll('.student-card').length;
                     const badge = document.getElementById(`count-${zone.id}`);
                     if (badge) badge.textContent = `${cnt} ${cnt === 1 ? 'integrante' : 'integrantes'}`;
                 });
-
-                // ESTO DESENCADENA LA SINCRONIZACIÓN A LOS DEMÁS DISPOSITIVOS
                 window.saveState();
             }
             return false;
@@ -639,7 +694,7 @@
                     input.classList.add('opacity-70', 'cursor-not-allowed');
                 });
                 lockIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>`;
-                lockText.textContent = "Bloqueado para todos";
+                lockText.textContent = isCloudEnv ? "Bloqueado para todos" : "Bloqueado (Solo Local)";
                 lockText.classList.add('text-red-500'); lockText.classList.remove('text-green-700');
             } else {
                 cards.forEach(card => card.setAttribute('draggable', 'true'));
