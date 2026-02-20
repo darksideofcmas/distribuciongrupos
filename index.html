@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organización de Grupos - Estilo Mac</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tipografía del sistema de Apple */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Evitar scroll general, lo manejaremos internamente */
+        }
+
+        /* Barra de menú superior estilo Mac */
+        .mac-menubar {
+            background-color: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+            font-weight: 500;
+            color: #1d1d1f;
+        }
+
+        /* Estilo de la ventana de cristal (Glassmorphism) */
+        .mac-window {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+        }
+
+        /* Área de arrastre dentro de la ventana */
+        .dropzone {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            min-height: 150px;
+            transition: all 0.2s ease;
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* Efecto cuando se arrastra algo sobre una zona */
+        .dropzone.drag-over {
+            background: rgba(0, 122, 255, 0.1);
+            box-shadow: inset 0 0 0 2px #007AFF;
+        }
+
+        /* Tarjeta del estudiante */
+        .student-card {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .student-card:hover {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+
+        .student-card:active {
+            cursor: grabbing;
+        }
+
+        /* Efecto fantasma al arrastrar */
+        .student-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Scrollbars estilo Mac */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Estilos del Modal Mac */
+        .mac-modal-overlay {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .mac-modal {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Menú Superior (Mac Menu Bar) -->
+    <nav class="mac-menubar h-7 w-full flex items-center justify-between px-4 z-50 fixed top-0">
+        <div class="flex items-center gap-4">
+            <!-- Icono de Apple simulado -->
+            <svg class="w-4 h-4 text-black" viewBox="0 0 384 512" fill="currentColor">
+                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+            </svg>
+            <span class="font-bold cursor-default">Organizador</span>
+            <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded">Archivo</span>
+            <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded">Edición</span>
+            <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded" onclick="exportData()">Exportar Configuración</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="lock-btn" onclick="openLockModal()" class="flex items-center gap-1 cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded transition-colors" title="Bloquear/Desbloquear edición">
+                <svg id="lock-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                <span id="lock-text" class="text-green-700">Desbloqueado</span>
+            </button>
+            <span id="clock" class="cursor-default"></span>
+        </div>
+    </nav>
+
+    <!-- Área Principal -->
+    <main class="flex-1 mt-7 p-6 overflow-hidden flex flex-col gap-6">
+        
+        <div class="flex justify-between items-end mb-2">
+            <div>
+                <h1 class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo</h1>
+                <p class="text-gray-700 mt-1 font-medium">Grupo 38 de Derecho - Arrastra a los estudiantes para reorganizarlos</p>
+            </div>
+        </div>
+
+        <!-- Contenedor de las ventanas/grupos -->
+        <div id="groups-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full overflow-y-auto pb-10">
+            <!-- Las ventanas se generarán aquí mediante JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Modal de Contraseña -->
+    <div id="password-modal" class="hidden fixed inset-0 mac-modal-overlay z-[100] flex items-center justify-center">
+        <div class="mac-modal w-80 p-5 text-center transform transition-all">
+            <div class="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-1">Bloqueo de Seguridad</h3>
+            <p id="modal-desc" class="text-sm text-gray-600 mb-4">Ingresa la contraseña para continuar.</p>
+            <input type="password" id="password-input" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 mb-4" placeholder="Contraseña...">
+            <div class="flex gap-2">
+                <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md transition-colors">Cancelar</button>
+                <button onclick="submitPassword()" class="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md transition-colors">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Reloj de la barra de menú
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const dateString = now.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+            document.getElementById('clock').textContent = `${dateString.replace('.', '')} ${timeString}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Estado del sistema
+        let isLocked = false;
+        const STORAGE_KEY = 'mac_groups_data';
+        const PASSWORD_KEY = 'mac_groups_pwd';
+
+        // Datos iniciales extraídos del CSV
+        const initialData = [
+            { id: "group-1", title: "Grupo 1", color: "blue", topic: "", students: [
+                { id: "91024", name: "William Fernando Guzman Cabrera" },
+                { id: "91670", name: "Aura Alejandra Rosas Arciniegas" },
+                { id: "91921", name: "Milciades Ducuara Rodriguez" },
+                { id: "92615", name: "Jose De Jesus Chavez Mendez" },
+                { id: "91918", name: "Wilson Steep Villarreal Cuellar" }
+            ]},
+            { id: "group-2", title: "Grupo 2", color: "purple", topic: "", students: [
+                { id: "90621", name: "Jorge Andres Muñoz Barrera" },
+                { id: "91563-1", name: "Alix Maria Gonzalez Acuña" },
+                { id: "91672", name: "Jose Daniel Vega Aponte" }
+            ]},
+            { id: "group-3", title: "Grupo 3", color: "indigo", topic: "", students: [
+                { id: "91002", name: "Jeison Fabian Triviño Cabiativa" },
+                { id: "91021", name: "Humberto Carlos Aranzalez Vanegas" },
+                { id: "91424", name: "Quidian Andrei Torres Medina" },
+                { id: "91892", name: "Carlos Andrés Florez González" },
+                { id: "92614", name: "William Javier Morales Vargas" }
+            ]},
+            { id: "group-4", title: "Grupo 4", color: "teal", topic: "", students: [
+                { id: "90149", name: "Sami Estiwens Carvajal Marin" },
+                { id: "90690", name: "Fabian Muñoz Villanueva" },
+                { id: "91563-2", name: "Diego Fernando Peña Cuartas" },
+                { id: "91668", name: "Edgar Henry Cardona Echavarria" },
+                { id: "92181", name: "Jairo Humberto Pinzon Herrera" },
+                { id: "92633", name: "Jhonny Gabriel Vallejo Barahona" }
+            ]},
+            { id: "group-5", title: "Grupo 5", color: "green", topic: "", students: [
+                { id: "91022", name: "Jeferson David Murcia Rodriguez" },
+                { id: "91667", name: "Carlos Eduardo Guarin Salgado" },
+                { id: "91683", name: "Juan Carlos Cardona Garavito" },
+                { id: "92165", name: "Dairon Styven Esquivel Yepes" },
+                { id: "92626", name: "Humberto Jose Fernandez Paz" }
+            ]},
+            { id: "group-6", title: "Grupo 6", color: "orange", topic: "", students: [
+                { id: "91025", name: "Elver Joaquin Fonseca Silva" },
+                { id: "92175", name: "Monica Andrea Diaz Herrera" },
+                { id: "92188", name: "Edison Enrique Moreno Mora" }
+            ]},
+            { id: "group-7", title: "Grupo 7", color: "red", topic: "", students: [
+                { id: "91678", name: "Leidy Yurleny Palacios Loaiza" },
+                { id: "92127", name: "Faiver Bravo Hernandez" },
+                { id: "92182", name: "Natalia Espejo Pallares" },
+                { id: "92200", name: "Luis Fernando Olivera Arevalo" },
+                { id: "92368", name: "Roberto Giraldo Veloza" }
+            ]},
+            { id: "unassigned", title: "Sin Asignar (Reserva)", color: "gray", topic: "", students: [] } // Zona útil para mover temporalmente
+        ];
+
+        let currentData = [];
+
+        // Función para renderizar los grupos
+        function renderGroups() {
+            const container = document.getElementById('groups-container');
+            container.innerHTML = '';
+
+            currentData.forEach(group => {
+                // Crear ventana Mac
+                const windowEl = document.createElement('div');
+                windowEl.className = 'mac-window h-full flex flex-col';
+
+                // Header de la ventana
+                const header = document.createElement('div');
+                header.className = 'px-4 py-3 border-b border-white/40 flex items-center bg-white/30 rounded-t-xl';
+                
+                // Botones de control (Rojo, Amarillo, Verde)
+                const controls = document.createElement('div');
+                controls.className = 'flex gap-2 mr-4';
+                controls.innerHTML = `
+                    <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-sm"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] shadow-sm"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] shadow-sm"></div>
+                `;
+                
+                // Título del grupo
+                const titleWrap = document.createElement('div');
+                titleWrap.className = 'flex-1 text-center pr-10'; // pr-10 para centrar compensando los botones
+                titleWrap.innerHTML = `
+                    <h2 class="text-[14px] font-semibold text-gray-800">${group.title}</h2>
+                    <p class="text-[11px] text-gray-600 count-badge" id="count-${group.id}">${group.students.length} integrantes</p>
+                `;
+
+                header.appendChild(controls);
+                header.appendChild(titleWrap);
+
+                // Campo de Tema
+                const topicContainer = document.createElement('div');
+                topicContainer.className = 'px-3 py-2 bg-white/40 border-b border-white/50';
+                
+                if(group.id !== 'unassigned') {
+                    topicContainer.innerHTML = `
+                        <input type="text" 
+                               id="topic-${group.id}" 
+                               class="topic-input w-full bg-white/60 border border-gray-200/60 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all placeholder-gray-400 font-medium" 
+                               placeholder="Asignar tema de exposición..." 
+                               value="${group.topic || ''}"
+                               onchange="saveState()">
+                    `;
+                } else {
+                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-1 text-center italic">Zona de reasignación (sin tema)</div>`;
+                }
+
+                // Área de Drop (Contenedor de estudiantes)
+                const dropzone = document.createElement('div');
+                dropzone.className = 'dropzone';
+                dropzone.id = group.id;
+
+                // Eventos de Drag & Drop para la Dropzone
+                dropzone.addEventListener('dragover', handleDragOver);
+                dropzone.addEventListener('dragenter', handleDragEnter);
+                dropzone.addEventListener('dragleave', handleDragLeave);
+                dropzone.addEventListener('drop', handleDrop);
+
+                // Agregar estudiantes al grupo
+                group.students.forEach(student => {
+                    const card = createStudentCard(student);
+                    dropzone.appendChild(card);
+                });
+
+                windowEl.appendChild(header);
+                windowEl.appendChild(topicContainer);
+                windowEl.appendChild(dropzone);
+                container.appendChild(windowEl);
+            });
+            
+            applyLockState(); // Aplicar el estado actual a la interfaz
+        }
+
+        // Crear elemento DOM para el estudiante
+        function createStudentCard(student) {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.draggable = true;
+            card.id = `student-${student.id}`;
+            card.dataset.id = student.id;
+            card.dataset.name = student.name;
+
+            // Icono de usuario simple (SVG)
+            const icon = `<svg class="w-8 h-8 text-gray-400 bg-gray-50 rounded-full p-1 border border-gray-100" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>`;
+            
+            card.innerHTML = `
+                ${icon}
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-sm font-medium text-gray-800 truncate" title="${student.name}">${student.name}</p>
+                    <p class="text-xs text-gray-400 font-mono">ID: ${student.id.split('-')[0]}</p>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 cursor-grab" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            `;
+
+            // Eventos de arrastre para la tarjeta
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+
+            return card;
+        }
+
+        // ---- Lógica de Drag & Drop ----
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            setTimeout(() => this.classList.add('dragging'), 0);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.id);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            draggedItem = null;
+            
+            // Limpiar estilos de dropzone
+            document.querySelectorAll('.dropzone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necesario para permitir el drop
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            // Asegurarse de agregar la clase solo al contenedor dropzone
+            let target = e.target.closest('.dropzone');
+            if (target) {
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            let target = e.target.closest('.dropzone');
+            // Si salimos del dropzone hacia un hijo, no quitar la clase
+            if (target && !target.contains(e.relatedTarget)) {
+                target.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            let dropzone = e.target.closest('.dropzone');
+            
+            if (dropzone && draggedItem) {
+                dropzone.classList.remove('drag-over');
+                
+                // Animar entrada suave
+                draggedItem.style.opacity = '0';
+                dropzone.appendChild(draggedItem);
+                
+                setTimeout(() => {
+                    draggedItem.style.opacity = '1';
+                }, 50);
+
+                // Actualizar contadores
+                updateAllCounts();
+                // Guardar persistencia
+                saveState();
+            }
+            return false;
+        }
+
+        // Actualizar los textos de "X integrantes"
+        function updateAllCounts() {
+            document.querySelectorAll('.dropzone').forEach(zone => {
+                const count = zone.querySelectorAll('.student-card').length;
+                const countBadge = document.getElementById(`count-${zone.id}`);
+                if (countBadge) {
+                    countBadge.textContent = `${count} ${count === 1 ? 'integrante' : 'integrantes'}`;
+                }
+            });
+        }
+
+        // Función extra para exportar la nueva configuración (simulada)
+        function exportData() {
+            let exportObj = {};
+            document.querySelectorAll('.mac-window').forEach(windowEl => {
+                let dropzone = windowEl.querySelector('.dropzone');
+                if(!dropzone) return;
+                let groupName = dropzone.id;
+                let topicInput = windowEl.querySelector('.topic-input');
+                let students = [];
+                dropzone.querySelectorAll('.student-card').forEach(card => {
+                    students.push({
+                        id: card.dataset.id,
+                        name: card.dataset.name
+                    });
+                });
+                exportObj[groupName] = {
+                    tema: topicInput ? topicInput.value : "",
+                    integrantes: students
+                };
+            });
+            
+            // Simulación de descarga creando un archivo JSON
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "nueva_organizacion_grupos.json");
+            dlAnchorElem.click();
+        }
+
+        // ---- Persistencia y Sistema de Bloqueo ----
+        
+        function saveState() {
+            let newState = [];
+            document.querySelectorAll('.mac-window').forEach(windowEl => {
+                let dropzone = windowEl.querySelector('.dropzone');
+                if(!dropzone) return;
+                let groupId = dropzone.id;
+                let title = windowEl.querySelector('h2').textContent;
+                let topicInput = windowEl.querySelector('.topic-input');
+                let topic = topicInput ? topicInput.value : "";
+                
+                let students = [];
+                dropzone.querySelectorAll('.student-card').forEach(card => {
+                    students.push({
+                        id: card.dataset.id,
+                        name: card.dataset.name
+                    });
+                });
+                
+                newState.push({
+                    id: groupId,
+                    title: title,
+                    topic: topic,
+                    students: students
+                });
+            });
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+            localStorage.setItem('mac_groups_locked', isLocked);
+        }
+
+        function loadState() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            const savedLock = localStorage.getItem('mac_groups_locked');
+            
+            if (savedData) {
+                currentData = JSON.parse(savedData);
+            } else {
+                currentData = JSON.parse(JSON.stringify(initialData)); // Copia profunda
+            }
+            
+            if (savedLock !== null) {
+                isLocked = savedLock === 'true';
+            } else {
+                isLocked = false; // Por defecto desbloqueado
+            }
+        }
+
+        // Lógica del Modal
+        const modal = document.getElementById('password-modal');
+        const passInput = document.getElementById('password-input');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+
+        function openLockModal() {
+            let pwd = localStorage.getItem(PASSWORD_KEY);
+            
+            if (!pwd) {
+                modalTitle.textContent = "Crear Contraseña";
+                modalDesc.textContent = "Crea una contraseña maestra para proteger los cambios.";
+            } else {
+                modalTitle.textContent = isLocked ? "Desbloquear Edición" : "Bloquear Edición";
+                modalDesc.textContent = isLocked ? "Ingresa la contraseña para permitir cambios." : "Ingresa la contraseña para proteger los grupos.";
+            }
+            
+            passInput.value = '';
+            modal.classList.remove('hidden');
+            setTimeout(() => passInput.focus(), 100);
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+
+        function submitPassword() {
+            const inputVal = passInput.value;
+            if (!inputVal) return;
+
+            let pwd = localStorage.getItem(PASSWORD_KEY);
+            
+            if (!pwd) {
+                // Configurar nueva contraseña por primera vez
+                localStorage.setItem(PASSWORD_KEY, inputVal);
+                isLocked = true;
+                applyLockState();
+                closeModal();
+            } else {
+                // Comprobar contraseña
+                if (inputVal === pwd) {
+                    isLocked = !isLocked;
+                    applyLockState();
+                    closeModal();
+                } else {
+                    alert("Contraseña incorrecta. Inténtalo de nuevo.");
+                    passInput.focus();
+                }
+            }
+        }
+
+        // Usar Enter en el input del modal
+        passInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                submitPassword();
+            }
+        });
+
+        // Aplicar los bloqueos visuales y lógicos
+        function applyLockState() {
+            const cards = document.querySelectorAll('.student-card');
+            const inputs = document.querySelectorAll('.topic-input');
+            const lockIcon = document.getElementById('lock-icon');
+            const lockText = document.getElementById('lock-text');
+
+            if (isLocked) {
+                cards.forEach(card => card.setAttribute('draggable', 'false'));
+                inputs.forEach(input => {
+                    input.setAttribute('readonly', 'true');
+                    input.classList.add('opacity-70', 'cursor-not-allowed');
+                });
+                
+                // SVG Candado Cerrado
+                lockIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>`;
+                lockText.textContent = "Bloqueado";
+                lockText.classList.add('text-red-500');
+                lockText.classList.remove('text-green-700');
+            } else {
+                cards.forEach(card => card.setAttribute('draggable', 'true'));
+                inputs.forEach(input => {
+                    input.removeAttribute('readonly');
+                    input.classList.remove('opacity-70', 'cursor-not-allowed');
+                });
+                
+                // SVG Candado Abierto
+                lockIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>`;
+                lockText.textContent = "Desbloqueado";
+                lockText.classList.remove('text-red-500');
+                lockText.classList.add('text-green-700');
+            }
+            saveState(); // Guardamos en local storage el estado actual del candado
+        }
+
+        // Cancelar drag si está bloqueado (doble seguridad)
+        document.addEventListener('dragstart', function(e) {
+            if(isLocked && e.target.classList.contains('student-card')) {
+                e.preventDefault();
+            }
+        });
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderGroups();
+        });
+
+    </script>
+</body>
+</html>
