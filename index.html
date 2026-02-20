@@ -146,7 +146,7 @@
             <!-- Los logs aparecerán aquí -->
         </div>
 
-        <button onclick="window.startLocalFallback()" class="mt-6 px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 text-sm font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+        <button onclick="window.startLocalFallback && window.startLocalFallback()" id="fallback-btn" class="mt-6 px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 text-sm font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             Saltar y usar Modo Local
         </button>
@@ -207,8 +207,37 @@
         </div>
     </div>
 
+    <!-- SCRIPT GUARDIÁN ANTI-CUELGUES -->
+    <script>
+        window.appCodeStarted = false;
+        
+        // Si a los 2 segundos el código principal no ha arrancado, significa que se rompió por un error de sintaxis al pegar las claves.
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (!window.appCodeStarted) {
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('loading-step').innerHTML = "<span class='text-red-500'>❌ ERROR CRÍTICO DE SINTAXIS</span>";
+                    document.getElementById('debug-log').innerHTML = 
+                        "<div class='text-red-400 font-bold'>> El motor se rompió antes de iniciar.</div>" +
+                        "<div class='text-yellow-300 mt-2'>> MOTIVO: Al pegar tus claves en GitHub borraste por accidente una comilla (\"), una coma (,) o una llave (}).</div>" +
+                        "<div class='text-white mt-2'>> Por favor revisa con cuidado el bloque 'firebaseConfig'.</div>";
+                    
+                    // Asegurar que el botón de emergencia funcione para forzar el cierre
+                    const btn = document.getElementById('fallback-btn');
+                    btn.onclick = function() {
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-red-100 text-red-800 px-2 py-1 rounded ml-2 border border-red-300">SINTAXIS ROTA</span>';
+                    };
+                }
+            }, 2500);
+        });
+    </script>
+
     <!-- Script principal Firebase y Lógica -->
     <script type="module">
+        // ESTA ES LA SEÑAL DE QUE EL CÓDIGO SÍ SE PUDO LEER CORRECTAMENTE
+        window.appCodeStarted = true;
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -216,13 +245,17 @@
         // ==========================================
         // 🚨 CONFIGURACIÓN DE FIREBASE PARA GITHUB 🚨
         // ==========================================
+        
+        // ⚠️ INSTRUCCIONES: Solo reemplaza los textos "TU_API_KEY", etc. por tus valores reales.
+        // ⚠️ ¡NO BORRES LAS COMILLAS (" ") NI LAS COMAS (,) DEL FINAL!
+        
         const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROYECTO",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "TU_SENDER_ID",
-            appId: "TU_APP_ID"
+            apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
+            authDomain: "basesdedatos-8545b.firebaseapp.com",
+            projectId: "basesdedatos-8545b",
+            storageBucket: "basesdedatos-8545b.firebasestorage.app",
+            messagingSenderId: "423832305020",
+            appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"
         };
 
         // --- SISTEMA DE LOGS ---
@@ -241,12 +274,7 @@
         };
 
         // Variables Globales
-        const isConfigured = firebaseConfig.apiKey !== "apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
-  authDomain: "basesdedatos-8545b.firebaseapp.com",
-  projectId: "basesdedatos-8545b",
-  storageBucket: "basesdedatos-8545b.firebasestorage.app",
-  messagingSenderId: "423832305020",
-  appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"" && firebaseConfig.apiKey !== "";
+        const isConfigured = firebaseConfig.apiKey !== "TU_API_KEY" && firebaseConfig.apiKey !== "";
         let isLocked = false;
         let globalPassword = "";
         let currentSubject = 'familia';
@@ -256,7 +284,7 @@
         let db, auth;
         let unsubscribeGroups = null;
         let unsubscribeGlobal = null;
-        let isSyncing = false; // Prevención de bucles
+        let isSyncing = false;
 
         // Datos Iniciales
         const initialData = [
@@ -300,42 +328,41 @@
         ];
 
         // INICIALIZACIÓN
-        logDebug("Iniciando script verificador...");
+        logDebug("Iniciando motor de sincronización...");
         
         if (!isConfigured) {
-            logDebug("Error: API Keys no detectadas. Usando variables por defecto.", true);
+            logDebug("Aviso: Ejecutando en Modo Prueba (Claves no insertadas).", true);
         } else {
             try {
-                logDebug("Claves detectadas. Inicializando Firebase App...");
+                logDebug("Claves detectadas. Inicializando conexión...");
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                logDebug("Firebase App inicializada correctamente.");
+                logDebug("App conectada. Iniciando verificación de identidad...");
                 initAuth();
             } catch (err) {
-                logDebug(`Error inicializando Firebase: ${err.message}`, true);
+                logDebug(`Error inicializando motor: ${err.message}`, true);
             }
         }
 
         async function initAuth() {
-            document.getElementById('loading-step').textContent = "Autenticando usuario...";
-            logDebug("Configurando listener de estado de sesión (onAuthStateChanged)...");
+            document.getElementById('loading-step').textContent = "Paso 1: Autenticando servidor...";
 
             onAuthStateChanged(auth, (user) => {
                 if (user) {
-                    logDebug(`¡Conectado! UID Anónimo: ${user.uid.substring(0,6)}...`);
-                    document.getElementById('loading-step').textContent = "Conectando a base de datos...";
+                    logDebug(`¡Identidad confirmada! UID: ${user.uid.substring(0,6)}...`);
+                    document.getElementById('loading-step').textContent = "Paso 2: Descargando datos...";
                     startCloudSync();
                 } else {
-                    logDebug("Sesión terminada o no iniciada.");
+                    logDebug("Sin sesión activa.");
                 }
             });
 
             try {
-                logDebug("Solicitando acceso anónimo al servidor...");
+                logDebug("Pidiendo permiso anónimo de entrada...");
                 await signInAnonymously(auth);
             } catch (error) {
-                logDebug(`Error de Autenticación: ${error.code} - ${error.message}`, true);
+                logDebug(`Error de Permisos: ${error.message}`, true);
             }
         }
 
@@ -345,13 +372,13 @@
         function startCloudSync() {
             if (!auth.currentUser || isSyncing) return;
             isSyncing = true;
-            logDebug("Iniciando sincronización con Firestore...");
+            logDebug("Configurando canales de escucha en tiempo real...");
 
             const globalRef = doc(db, 'organizador_grupos', 'config_global');
-            logDebug("Enviando petición de lectura: config_global...");
+            logDebug("Llamando documento de seguridad...");
             
             unsubscribeGlobal = onSnapshot(globalRef, (docSnap) => {
-                logDebug("Respuesta recibida: config_global");
+                logDebug("Lectura exitosa: config_global");
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     isLocked = data.isLocked || false;
@@ -362,7 +389,7 @@
                 }
                 applyLockState();
             }, (error) => {
-                logDebug(`Error leyendo config: ${error.message}`, true);
+                logDebug(`Rechazo de Firebase (config): ${error.message}`, true);
             });
 
             loadSubjectFromCloud(currentSubject);
@@ -372,17 +399,17 @@
             if (unsubscribeGroups) unsubscribeGroups(); 
             
             const subjectRef = doc(db, 'organizador_grupos', `estado_${subject}`);
-            logDebug(`Enviando petición de lectura: estado_${subject}... (Si se queda trabado aquí, te faltó crear la base de datos o arreglar las Reglas)`);
+            logDebug(`Llamando datos de la materia: ${subject}...`);
             
             unsubscribeGroups = onSnapshot(subjectRef, (docSnap) => {
-                logDebug(`Respuesta recibida: estado_${subject} ¡Todo OK!`);
+                logDebug(`¡Datos de ${subject} recibidos y validados!`);
                 let newData = [];
                 let isFirstTime = false;
 
                 if (docSnap.exists() && docSnap.data().groups) {
                     newData = docSnap.data().groups;
                 } else {
-                    logDebug("Documento vacío. Creando base de datos inicial...");
+                    logDebug("Base de datos nueva, estructurando estudiantes...");
                     newData = JSON.parse(JSON.stringify(initialData));
                     isFirstTime = true;
                 }
@@ -412,14 +439,17 @@
                     
                     const loader = document.getElementById('loading-overlay');
                     if (loader && !loader.classList.contains('hidden')) {
-                        logDebug("¡Éxito! Ocultando pantalla de carga...");
+                        logDebug("✅ Arranque completado. Abriendo aplicación...");
                         loader.style.opacity = '0';
                         setTimeout(() => loader.classList.add('hidden'), 500);
                     }
                 }
                 saveStateCore(newData);
             }, (error) => {
-                logDebug(`Error crítico Firestore: ${error.message}`, true);
+                logDebug(`Rechazo de Base de Datos: ${error.message}`, true);
+                if (error.message.includes("Missing or insufficient permissions")) {
+                     logDebug("⚠️ IMPORTANTE: Necesitas ir a Firebase > Firestore > Reglas y poner: allow read, write: if true;", true);
+                }
             });
         }
 
@@ -427,12 +457,12 @@
         // MODO LOCAL (Fallback manual)
         // ==========================================
         window.startLocalFallback = function() {
-            logDebug("Activando rescate manual (Modo Local)...");
+            logDebug("Cambiando forzosamente a Modo Local...");
             const loader = document.getElementById('loading-overlay');
             if (loader) loader.classList.add('hidden');
             
-            document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">OFFLINE</span>';
-            document.getElementById('main-subtitle').textContent = "Modo Local activo. Los cambios NO se enviarán a la red.";
+            document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">MODO LOCAL</span>';
+            document.getElementById('main-subtitle').textContent = "Página aislada. No hay conexión con el servidor.";
 
             const savedData = localStorage.getItem(`mac_groups_data_${currentSubject}`);
             if (savedData) currentData = JSON.parse(savedData);
@@ -472,7 +502,7 @@
             if (isConfigured && auth && auth.currentUser) {
                 try {
                     await setDoc(doc(db, 'organizador_grupos', `estado_${currentSubject}`), { groups: stateToSave }, { merge: true });
-                } catch (e) { logDebug(`Error guardando: ${e.message}`, true); }
+                } catch (e) { logDebug(`Fallo al guardar: ${e.message}`, true); }
             } else {
                 localStorage.setItem(`mac_groups_data_${currentSubject}`, JSON.stringify(stateToSave));
             }
