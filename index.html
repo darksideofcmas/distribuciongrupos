@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organización de Grupos</title>
+    <title>Organización de Grupos - Estilo Mac</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Tipografía del sistema de Apple */
@@ -13,7 +13,7 @@
             background-attachment: fixed;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Evitar scroll general, lo manejaremos internamente */
+            overflow: hidden; 
         }
 
         /* Barra de menú superior estilo Mac */
@@ -27,7 +27,7 @@
             color: #1d1d1f;
         }
 
-        /* Estilo de la ventana de cristal (Glassmorphism) */
+        /* Estilo de la ventana de cristal */
         .mac-window {
             background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(25px);
@@ -50,7 +50,6 @@
             border-radius: 0 0 12px 12px;
         }
 
-        /* Efecto cuando se arrastra algo sobre una zona */
         .dropzone.drag-over {
             background: rgba(0, 122, 255, 0.1);
             box-shadow: inset 0 0 0 2px #007AFF;
@@ -80,7 +79,6 @@
             cursor: grabbing;
         }
 
-        /* Efecto fantasma al arrastrar */
         .student-card.dragging {
             opacity: 0.5;
             transform: scale(0.95);
@@ -88,20 +86,10 @@
         }
 
         /* Scrollbars estilo Mac */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
         
         /* Estilos del Modal Mac */
         .mac-modal-overlay {
@@ -145,7 +133,14 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col">
+<body class="h-screen flex flex-col relative">
+
+    <!-- Pantalla de Carga de la Nube -->
+    <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p id="loading-text" class="text-gray-800 font-medium text-lg">Conectando con la nube...</p>
+        <p class="text-gray-500 text-sm mt-2">Sincronizando estado global</p>
+    </div>
 
     <!-- Menú Superior (Mac Menu Bar) -->
     <nav class="mac-menubar h-7 w-full flex items-center justify-between px-4 z-50 fixed top-0">
@@ -154,13 +149,13 @@
             <svg class="w-4 h-4 text-black" viewBox="0 0 384 512" fill="currentColor">
                 <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
             </svg>
-            <span class="font-bold cursor-default">Organizador</span>
+            <span class="font-bold cursor-default">Organizador Cloud</span>
             <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded">Archivo</span>
             <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded">Edición</span>
             <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded" onclick="exportData()">Exportar Configuración</span>
         </div>
         <div class="flex items-center gap-4">
-            <button id="lock-btn" onclick="openLockModal()" class="flex items-center gap-1 cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded transition-colors" title="Bloquear/Desbloquear edición">
+            <button id="lock-btn" onclick="openLockModal()" class="flex items-center gap-1 cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded transition-colors" title="Bloquear/Desbloquear edición para todos">
                 <svg id="lock-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
                 <span id="lock-text" class="text-green-700">Desbloqueado</span>
             </button>
@@ -173,8 +168,8 @@
         
         <div class="flex justify-between items-end">
             <div>
-                <h1 class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo</h1>
-                <p class="text-gray-700 mt-1 font-medium">Grupo 39 de Derecho - Arrastra a los estudiantes para reorganizarlos</p>
+                <h1 class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo Sincronizados</h1>
+                <p class="text-gray-700 mt-1 font-medium">Grupo 38 de Derecho - Los cambios se guardan y reflejan para todos en tiempo real</p>
             </div>
         </div>
 
@@ -201,8 +196,8 @@
             <div class="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
                 <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
-            <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-1">Bloqueo de Seguridad</h3>
-            <p id="modal-desc" class="text-sm text-gray-600 mb-4">Ingresa la contraseña para continuar.</p>
+            <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-1">Seguridad del Administrador</h3>
+            <p id="modal-desc" class="text-sm text-gray-600 mb-4">Ingresa la contraseña maestra del servidor.</p>
             <input type="password" id="password-input" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 mb-4" placeholder="Contraseña...">
             <div class="flex gap-2">
                 <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md transition-colors">Cancelar</button>
@@ -211,313 +206,288 @@
         </div>
     </div>
 
-    <script>
-        // Reloj de la barra de menú
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            const dateString = now.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-            document.getElementById('clock').textContent = `${dateString.replace('.', '')} ${timeString}`;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+    <!-- Script tipo módulo para manejar Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Estado del sistema
+        // Variables Globales de Estado
         let isLocked = false;
-        let currentSubject = 'familia'; // Asignatura activa por defecto
+        let globalPassword = "";
+        let currentSubject = 'familia';
+        let currentData = [];
+        let draggedItem = null;
+        let pendingUpdate = null; // Para no interrumpir la pantalla si alguien arrastra algo
         
-        // Claves de Storage dinámicas por asignatura
-        const getStorageKey = () => `mac_groups_data_${currentSubject}`;
-        const PASSWORD_KEY = 'mac_groups_pwd';
+        let db, auth, appId;
+        let unsubscribeGroups = null;
+        let unsubscribeGlobal = null;
 
-        // Datos iniciales extraídos del CSV
+        // Datos Iniciales Base
         const initialData = [
             { id: "group-1", title: "Grupo 1", color: "blue", topic: "", students: [
-                { id: "91024", name: "William Fernando Guzman Cabrera" },
-                { id: "91670", name: "Aura Alejandra Rosas Arciniegas" },
-                { id: "91921", name: "Milciades Ducuara Rodriguez" },
-                { id: "92615", name: "Jose De Jesus Chavez Mendez" },
-                { id: "91918", name: "Wilson Steep Villarreal Cuellar" }
+                { id: "91024", name: "William Fernando Guzman Cabrera" }, { id: "91670", name: "Aura Alejandra Rosas Arciniegas" }, { id: "91921", name: "Milciades Ducuara Rodriguez" }, { id: "92615", name: "Jose De Jesus Chavez Mendez" }, { id: "91918", name: "Wilson Steep Villarreal Cuellar" }
             ]},
             { id: "group-2", title: "Grupo 2", color: "purple", topic: "", students: [
-                { id: "90621", name: "Jorge Andres Muñoz Barrera" },
-                { id: "91563-1", name: "Alix Maria Gonzalez Acuña" },
-                { id: "91672", name: "Jose Daniel Vega Aponte" }
+                { id: "90621", name: "Jorge Andres Muñoz Barrera" }, { id: "91563-1", name: "Alix Maria Gonzalez Acuña" }, { id: "91672", name: "Jose Daniel Vega Aponte" }
             ]},
             { id: "group-3", title: "Grupo 3", color: "indigo", topic: "", students: [
-                { id: "91002", name: "Jeison Fabian Triviño Cabiativa" },
-                { id: "91021", name: "Humberto Carlos Aranzalez Vanegas" },
-                { id: "91424", name: "Quidian Andrei Torres Medina" },
-                { id: "91892", name: "Carlos Andrés Florez González" },
-                { id: "92614", name: "William Javier Morales Vargas" }
+                { id: "91002", name: "Jeison Fabian Triviño Cabiativa" }, { id: "91021", name: "Humberto Carlos Aranzalez Vanegas" }, { id: "91424", name: "Quidian Andrei Torres Medina" }, { id: "91892", name: "Carlos Andrés Florez González" }, { id: "92614", name: "William Javier Morales Vargas" }
             ]},
             { id: "group-4", title: "Grupo 4", color: "teal", topic: "", students: [
-                { id: "90149", name: "Sami Estiwens Carvajal Marin" },
-                { id: "90690", name: "Fabian Muñoz Villanueva" },
-                { id: "91563-2", name: "Diego Fernando Peña Cuartas" },
-                { id: "91668", name: "Edgar Henry Cardona Echavarria" },
-                { id: "92181", name: "Jairo Humberto Pinzon Herrera" },
-                { id: "92633", name: "Jhonny Gabriel Vallejo Barahona" }
+                { id: "90149", name: "Sami Estiwens Carvajal Marin" }, { id: "90690", name: "Fabian Muñoz Villanueva" }, { id: "91563-2", name: "Diego Fernando Peña Cuartas" }, { id: "91668", name: "Edgar Henry Cardona Echavarria" }, { id: "92181", name: "Jairo Humberto Pinzon Herrera" }, { id: "92633", name: "Jhonny Gabriel Vallejo Barahona" }
             ]},
             { id: "group-5", title: "Grupo 5", color: "green", topic: "", students: [
-                { id: "91022", name: "Jeferson David Murcia Rodriguez" },
-                { id: "91667", name: "Carlos Eduardo Guarin Salgado" },
-                { id: "91683", name: "Juan Carlos Cardona Garavito" },
-                { id: "92165", name: "Dairon Styven Esquivel Yepes" },
-                { id: "92626", name: "Humberto Jose Fernandez Paz" }
+                { id: "91022", name: "Jeferson David Murcia Rodriguez" }, { id: "91667", name: "Carlos Eduardo Guarin Salgado" }, { id: "91683", name: "Juan Carlos Cardona Garavito" }, { id: "92165", name: "Dairon Styven Esquivel Yepes" }, { id: "92626", name: "Humberto Jose Fernandez Paz" }
             ]},
             { id: "group-6", title: "Grupo 6", color: "orange", topic: "", students: [
-                { id: "91025", name: "Elver Joaquin Fonseca Silva" },
-                { id: "92175", name: "Monica Andrea Diaz Herrera" },
-                { id: "92188", name: "Edison Enrique Moreno Mora" }
+                { id: "91025", name: "Elver Joaquin Fonseca Silva" }, { id: "92175", name: "Monica Andrea Diaz Herrera" }, { id: "92188", name: "Edison Enrique Moreno Mora" }
             ]},
             { id: "group-7", title: "Grupo 7", color: "red", topic: "", students: [
-                { id: "91678", name: "Leidy Yurleny Palacios Loaiza" },
-                { id: "92127", name: "Faiver Bravo Hernandez" },
-                { id: "92182", name: "Natalia Espejo Pallares" },
-                { id: "92200", name: "Luis Fernando Olivera Arevalo" },
-                { id: "92368", name: "Roberto Giraldo Veloza" }
+                { id: "91678", name: "Leidy Yurleny Palacios Loaiza" }, { id: "92127", name: "Faiver Bravo Hernandez" }, { id: "92182", name: "Natalia Espejo Pallares" }, { id: "92200", name: "Luis Fernando Olivera Arevalo" }, { id: "92368", name: "Roberto Giraldo Veloza" }
             ]},
             { id: "group-8", title: "Grupo 8", color: "pink", topic: "", students: [
-                { id: "90691", name: "Crystel Yohana Moreno Perez" },
-                { id: "91006", name: "Carlos Mario Agamez Seña" },
-                { id: "91007", name: "Magda Marleny Cardenas Suarez" },
-                { id: "91420", name: "Diana Catalina Mora Romero" }
+                { id: "90691", name: "Crystel Yohana Moreno Perez" }, { id: "91006", name: "Carlos Mario Agamez Seña" }, { id: "91007", name: "Magda Marleny Cardenas Suarez" }, { id: "91420", name: "Diana Catalina Mora Romero" }
             ]},
             { id: "group-9", title: "Grupo 9", color: "cyan", topic: "", students: [
-                { id: "91356", name: "Hermann Buitrago Otalvaro" },
-                { id: "92166", name: "Eder Mauricio Suescun Alsina" },
-                { id: "92374", name: "Alexander Romero Ovalle" },
-                { id: "92644", name: "Kimberly Tatiana Martinez Retavisca" },
-                { id: "92645", name: "Luis Carlos Diaz Lozano" }
+                { id: "91356", name: "Hermann Buitrago Otalvaro" }, { id: "92166", name: "Eder Mauricio Suescun Alsina" }, { id: "92374", name: "Alexander Romero Ovalle" }, { id: "92644", name: "Kimberly Tatiana Martinez Retavisca" }, { id: "92645", name: "Luis Carlos Diaz Lozano" }
             ]},
             { id: "group-10", title: "Grupo 10", color: "lime", topic: "", students: [
-                { id: "90595", name: "Alexander Castañeda Rodriguez" },
-                { id: "91015", name: "Alexander Lopez Barona" },
-                { id: "91412", name: "Katherine Duran Roa" }
+                { id: "90595", name: "Alexander Castañeda Rodriguez" }, { id: "91015", name: "Alexander Lopez Barona" }, { id: "91412", name: "Katherine Duran Roa" }
             ]},
             { id: "group-11", title: "Grupo 11", color: "yellow", topic: "", students: [
                 { id: "91409", name: "Diana Carolina Bejarano Arias" }
             ]},
             { id: "group-12", title: "Grupo 12", color: "rose", topic: "", students: [
-                { id: "91661", name: "Nelcy Aldana Carrillo" },
-                { id: "92178", name: "Leidy Maria Barros Lesmes" },
-                { id: "92193", name: "Adriana Quintero Giral" }
+                { id: "91661", name: "Nelcy Aldana Carrillo" }, { id: "92178", name: "Leidy Maria Barros Lesmes" }, { id: "92193", name: "Adriana Quintero Giral" }
             ]},
-            { id: "unassigned", title: "Sin Asignar (Reserva)", color: "gray", topic: "", students: [] } // Zona útil para mover temporalmente
+            { id: "unassigned", title: "Sin Asignar (Reserva)", color: "gray", topic: "", students: [] }
         ];
 
-        let currentData = [];
+        // INICIALIZACIÓN DE FIREBASE PARA SINCRONIZACIÓN EN LA NUBE
+        const isCloudEnv = typeof __firebase_config !== 'undefined';
+        
+        if (isCloudEnv) {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            
+            // Iniciar Autenticación y luego datos
+            initAuth();
+        } else {
+            document.getElementById('loading-text').textContent = "Error: Falta configuración del Servidor";
+            alert("Este panel requiere estar alojado en el entorno oficial para sincronizar datos.");
+        }
 
-        // Cambiar de asignatura
-        function switchSubject(subject) {
-            // Si intenta cambiar pero está arrastrando algo, ignorar
-            if (draggedItem) return;
+        async function initAuth() {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    startCloudSync(); // Comenzar a sincronizar solo cuando haya conexión segura
+                }
+            });
 
-            // Guardar estado actual antes de cambiar
-            if (currentData.length > 0) {
-                saveState();
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                document.getElementById('loading-text').textContent = "Error de conexión segura.";
+            }
+        }
+
+        // ---- LÓGICA DE SINCRONIZACIÓN EN TIEMPO REAL ----
+
+        function startCloudSync() {
+            if (!auth.currentUser) return;
+
+            // 1. Suscribirse a la configuración global de seguridad (contraseñas/bloqueos compartidos)
+            const globalRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', 'global_settings');
+            unsubscribeGlobal = onSnapshot(globalRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    isLocked = data.isLocked || false;
+                    globalPassword = data.password || "";
+                } else {
+                    isLocked = false;
+                    globalPassword = "";
+                }
+                applyLockState();
+            }, (error) => console.error("Sync Error Global:", error));
+
+            // 2. Suscribirse a la asignatura inicial
+            loadSubjectFromCloud(currentSubject);
+        }
+
+        function loadSubjectFromCloud(subject) {
+            if (unsubscribeGroups) unsubscribeGroups(); // Desconectar de la anterior si se cambió de pestaña
+            
+            const subjectRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', `state_${subject}`);
+            
+            unsubscribeGroups = onSnapshot(subjectRef, (docSnap) => {
+                let newData = [];
+                let isFirstTime = false;
+                let dataWasInjected = false;
+
+                if (docSnap.exists() && docSnap.data().groups) {
+                    newData = docSnap.data().groups;
+                } else {
+                    // Si el servidor no tiene datos para esta asignatura, los creamos
+                    newData = JSON.parse(JSON.stringify(initialData));
+                    isFirstTime = true;
+                }
+
+                // Inyectar estudiantes nuevos del código si faltan en la base de datos de la nube
+                if (!isFirstTime) {
+                    initialData.forEach(initGroup => {
+                        let existingGroup = newData.find(g => g.id === initGroup.id);
+                        if (!existingGroup) {
+                            const unIndex = newData.findIndex(g => g.id === 'unassigned');
+                            if (unIndex !== -1) {
+                                newData.splice(unIndex, 0, JSON.parse(JSON.stringify(initGroup)));
+                            } else {
+                                newData.push(JSON.parse(JSON.stringify(initGroup)));
+                            }
+                            dataWasInjected = true;
+                        } else {
+                            initGroup.students.forEach(initStudent => {
+                                let studentExists = false;
+                                newData.forEach(g => { if (g.students.find(s => s.id === initStudent.id)) studentExists = true; });
+                                if (!studentExists) {
+                                    existingGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
+                                    dataWasInjected = true;
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Controlar experiencia de usuario: no interrumpir visualmente si alguien está arrastrando una tarjeta
+                if (draggedItem) {
+                    pendingUpdate = newData; // Guardar actualización para cuando termine de soltar
+                } else {
+                    currentData = newData;
+                    renderGroups();
+                    
+                    // Ocultar pantalla de carga la primera vez que todo carga
+                    const loader = document.getElementById('loading-overlay');
+                    if (loader && !loader.classList.contains('hidden')) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.classList.add('hidden'), 500);
+                    }
+                }
+
+                // Si añadimos estudiantes automáticamente o era la primera vez, guardar los cambios limpios en la nube
+                if (isFirstTime || dataWasInjected) {
+                    saveStateToCloud(newData);
+                }
+
+            }, (error) => console.error("Sync Error Subject:", error));
+        }
+
+        async function saveStateToCloud(stateArray = null) {
+            if (!auth.currentUser) return;
+            
+            // Construir el estado actual a partir de la interfaz (si no se proporciona un array directamente)
+            let stateToSave = stateArray;
+            if (!stateToSave) {
+                stateToSave = [];
+                document.querySelectorAll('.mac-window').forEach(windowEl => {
+                    let dropzone = windowEl.querySelector('.dropzone');
+                    if(!dropzone) return;
+                    let groupId = dropzone.id;
+                    let title = windowEl.querySelector('h2').textContent;
+                    let topicInput = windowEl.querySelector('.topic-input');
+                    let topic = topicInput ? topicInput.value : "";
+                    
+                    let students = [];
+                    dropzone.querySelectorAll('.student-card').forEach(card => {
+                        students.push({ id: card.dataset.id, name: card.dataset.name });
+                    });
+                    
+                    stateToSave.push({ id: groupId, title: title, topic: topic, students: students });
+                });
             }
 
-            // Actualizar interfaz de pestañas
+            const subjectRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', `state_${currentSubject}`);
+            try {
+                await setDoc(subjectRef, { groups: stateToSave }, { merge: true });
+            } catch (error) {
+                console.error("No se pudo guardar en la nube:", error);
+            }
+        }
+
+        // ---- MÉTODOS EXPUESTOS A LA VENTANA GLOBAL (Necesario en type="module") ----
+        
+        window.switchSubject = (subject) => {
+            if (draggedItem) return;
             currentSubject = subject;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${subject}`).classList.add('active');
+            
+            // Al cambiar, cargamos desde la base de datos la nueva asignatura
+            loadSubjectFromCloud(currentSubject);
+        };
 
-            // Cargar datos de la nueva asignatura
-            loadState();
-            renderGroups();
-        }
+        window.saveState = () => {
+            saveStateToCloud();
+        };
 
-        // Función para renderizar los grupos
-        function renderGroups() {
-            const container = document.getElementById('groups-container');
-            container.innerHTML = '';
+        window.openLockModal = () => {
+            const modalTitle = document.getElementById('modal-title');
+            const modalDesc = document.getElementById('modal-desc');
+            const passInput = document.getElementById('password-input');
+            
+            if (!globalPassword) {
+                modalTitle.textContent = "Crear Contraseña Maestra";
+                modalDesc.textContent = "Nadie ha configurado una clave aún. Crea una para proteger el panel para todos los usuarios.";
+            } else {
+                modalTitle.textContent = isLocked ? "Desbloquear Edición" : "Bloquear Edición";
+                modalDesc.textContent = isLocked ? "Ingresa la clave del administrador para permitir cambios a todos." : "Ingresa la clave para bloquear los grupos.";
+            }
+            
+            passInput.value = '';
+            document.getElementById('password-modal').classList.remove('hidden');
+            setTimeout(() => passInput.focus(), 100);
+        };
 
-            currentData.forEach(group => {
-                // Crear ventana Mac
-                const windowEl = document.createElement('div');
-                windowEl.className = 'mac-window h-full flex flex-col';
+        window.closeModal = () => {
+            document.getElementById('password-modal').classList.add('hidden');
+        };
 
-                // Header de la ventana
-                const header = document.createElement('div');
-                header.className = 'px-4 py-3 border-b border-white/40 flex items-center bg-white/30 rounded-t-xl';
-                
-                // Botones de control (Rojo, Amarillo, Verde)
-                const controls = document.createElement('div');
-                controls.className = 'flex gap-2 mr-4';
-                controls.innerHTML = `
-                    <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-sm"></div>
-                    <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] shadow-sm"></div>
-                    <div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] shadow-sm"></div>
-                `;
-                
-                // Título del grupo
-                const titleWrap = document.createElement('div');
-                titleWrap.className = 'flex-1 text-center pr-10'; // pr-10 para centrar compensando los botones
-                titleWrap.innerHTML = `
-                    <h2 class="text-[14px] font-semibold text-gray-800">${group.title}</h2>
-                    <p class="text-[11px] text-gray-600 count-badge" id="count-${group.id}">${group.students.length} integrantes</p>
-                `;
+        window.submitPassword = async () => {
+            const passInput = document.getElementById('password-input');
+            const inputVal = passInput.value;
+            if (!inputVal) return;
 
-                header.appendChild(controls);
-                header.appendChild(titleWrap);
+            const globalRef = doc(db, 'artifacts', appId, 'public', 'data', 'mac_groups', 'global_settings');
 
-                // Campo de Tema
-                const topicContainer = document.createElement('div');
-                topicContainer.className = 'px-3 py-2 bg-white/40 border-b border-white/50';
-                
-                if(group.id !== 'unassigned') {
-                    topicContainer.innerHTML = `
-                        <input type="text" 
-                               id="topic-${group.id}" 
-                               class="topic-input w-full bg-white/60 border border-gray-200/60 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all placeholder-gray-400 font-medium" 
-                               placeholder="Asignar tema de exposición..." 
-                               value="${group.topic || ''}"
-                               onchange="saveState()">
-                    `;
+            if (!globalPassword) {
+                // Configurar nueva contraseña globalmente
+                try {
+                    await setDoc(globalRef, { password: inputVal, isLocked: true }, { merge: true });
+                    window.closeModal();
+                } catch(e) { alert("Error de servidor"); }
+            } else {
+                // Comprobar contraseña contra la de la nube
+                if (inputVal === globalPassword) {
+                    try {
+                        await setDoc(globalRef, { isLocked: !isLocked }, { merge: true });
+                        window.closeModal();
+                    } catch(e) { alert("Error de servidor"); }
                 } else {
-                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-1 text-center italic">Zona de reasignación (sin tema)</div>`;
+                    alert("Contraseña incorrecta. Inténtalo de nuevo.");
+                    passInput.focus();
                 }
-
-                // Área de Drop (Contenedor de estudiantes)
-                const dropzone = document.createElement('div');
-                dropzone.className = 'dropzone';
-                dropzone.id = group.id;
-
-                // Eventos de Drag & Drop para la Dropzone
-                dropzone.addEventListener('dragover', handleDragOver);
-                dropzone.addEventListener('dragenter', handleDragEnter);
-                dropzone.addEventListener('dragleave', handleDragLeave);
-                dropzone.addEventListener('drop', handleDrop);
-
-                // Agregar estudiantes al grupo
-                group.students.forEach(student => {
-                    const card = createStudentCard(student);
-                    dropzone.appendChild(card);
-                });
-
-                windowEl.appendChild(header);
-                windowEl.appendChild(topicContainer);
-                windowEl.appendChild(dropzone);
-                container.appendChild(windowEl);
-            });
-            
-            applyLockState(); // Aplicar el estado actual a la interfaz
-        }
-
-        // Crear elemento DOM para el estudiante
-        function createStudentCard(student) {
-            const card = document.createElement('div');
-            card.className = 'student-card';
-            card.draggable = true;
-            card.id = `student-${student.id}`;
-            card.dataset.id = student.id;
-            card.dataset.name = student.name;
-
-            // Icono de usuario simple (SVG)
-            const icon = `<svg class="w-8 h-8 text-gray-400 bg-gray-50 rounded-full p-1 border border-gray-100" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>`;
-            
-            card.innerHTML = `
-                ${icon}
-                <div class="flex-1 overflow-hidden">
-                    <p class="text-sm font-medium text-gray-800 truncate" title="${student.name}">${student.name}</p>
-                    <p class="text-xs text-gray-400 font-mono">ID: ${student.id.split('-')[0]}</p>
-                </div>
-                <svg class="w-4 h-4 text-gray-300 cursor-grab" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            `;
-
-            // Eventos de arrastre para la tarjeta
-            card.addEventListener('dragstart', handleDragStart);
-            card.addEventListener('dragend', handleDragEnd);
-
-            return card;
-        }
-
-        // ---- Lógica de Drag & Drop ----
-        let draggedItem = null;
-
-        function handleDragStart(e) {
-            draggedItem = this;
-            setTimeout(() => this.classList.add('dragging'), 0);
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.id);
-        }
-
-        function handleDragEnd(e) {
-            this.classList.remove('dragging');
-            this.style.opacity = '1'; // Asegurar que siempre recupere su visibilidad al terminar
-            draggedItem = null;
-            
-            // Limpiar estilos de dropzone
-            document.querySelectorAll('.dropzone').forEach(zone => {
-                zone.classList.remove('drag-over');
-            });
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault(); // Necesario para permitir el drop
-            e.dataTransfer.dropEffect = 'move';
-            return false;
-        }
-
-        function handleDragEnter(e) {
-            e.preventDefault();
-            // Asegurarse de agregar la clase solo al contenedor dropzone
-            let target = e.target.closest('.dropzone');
-            if (target) {
-                target.classList.add('drag-over');
             }
-        }
+        };
 
-        function handleDragLeave(e) {
-            let target = e.target.closest('.dropzone');
-            // Si salimos del dropzone hacia un hijo, no quitar la clase
-            if (target && !target.contains(e.relatedTarget)) {
-                target.classList.remove('drag-over');
-            }
-        }
-
-        function handleDrop(e) {
-            e.preventDefault(); // Prevenir comportamientos por defecto del navegador
-            e.stopPropagation();
-            let dropzone = e.target.closest('.dropzone');
-            
-            if (dropzone && draggedItem) {
-                dropzone.classList.remove('drag-over');
-                
-                // Guardamos la referencia en una variable local para que no se pierda
-                let item = draggedItem; 
-                
-                // Animar entrada suave
-                item.style.opacity = '0';
-                dropzone.appendChild(item);
-                
-                setTimeout(() => {
-                    if (item) item.style.opacity = '1';
-                }, 50);
-
-                // Actualizar contadores
-                updateAllCounts();
-                // Guardar persistencia
-                saveState();
-            }
-            return false;
-        }
-
-        // Actualizar los textos de "X integrantes"
-        function updateAllCounts() {
-            document.querySelectorAll('.dropzone').forEach(zone => {
-                const count = zone.querySelectorAll('.student-card').length;
-                const countBadge = document.getElementById(`count-${zone.id}`);
-                if (countBadge) {
-                    countBadge.textContent = `${count} ${count === 1 ? 'integrante' : 'integrantes'}`;
-                }
-            });
-        }
-
-        // Función extra para exportar la nueva configuración (simulada)
-        function exportData() {
+        window.exportData = () => {
             let exportObj = {
                 asignatura: currentSubject === 'familia' ? 'Civil Familia' : 'Civil Obligaciones',
                 grupos: {}
@@ -525,164 +495,137 @@
             document.querySelectorAll('.mac-window').forEach(windowEl => {
                 let dropzone = windowEl.querySelector('.dropzone');
                 if(!dropzone) return;
-                let groupName = dropzone.id;
-                let topicInput = windowEl.querySelector('.topic-input');
-                let students = [];
-                dropzone.querySelectorAll('.student-card').forEach(card => {
-                    students.push({
-                        id: card.dataset.id,
-                        name: card.dataset.name
-                    });
-                });
-                exportObj.grupos[groupName] = {
-                    tema: topicInput ? topicInput.value : "",
-                    integrantes: students
+                exportObj.grupos[dropzone.id] = {
+                    tema: windowEl.querySelector('.topic-input') ? windowEl.querySelector('.topic-input').value : "",
+                    integrantes: Array.from(dropzone.querySelectorAll('.student-card')).map(card => ({ id: card.dataset.id, name: card.dataset.name }))
                 };
             });
-            
-            // Simulación de descarga creando un archivo JSON
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
             dlAnchorElem.setAttribute("download", `organizacion_grupos_${currentSubject}.json`);
             dlAnchorElem.click();
-        }
+        };
 
-        // ---- Persistencia y Sistema de Bloqueo ----
-        
-        function saveState() {
-            let newState = [];
-            document.querySelectorAll('.mac-window').forEach(windowEl => {
-                let dropzone = windowEl.querySelector('.dropzone');
-                if(!dropzone) return;
-                let groupId = dropzone.id;
-                let title = windowEl.querySelector('h2').textContent;
-                let topicInput = windowEl.querySelector('.topic-input');
-                let topic = topicInput ? topicInput.value : "";
-                
-                let students = [];
-                dropzone.querySelectorAll('.student-card').forEach(card => {
-                    students.push({
-                        id: card.dataset.id,
-                        name: card.dataset.name
-                    });
-                });
-                
-                newState.push({
-                    id: groupId,
-                    title: title,
-                    topic: topic,
-                    students: students
-                });
-            });
-            
-            // Guardar usando la clave de la asignatura actual
-            localStorage.setItem(getStorageKey(), JSON.stringify(newState));
-            localStorage.setItem('mac_groups_locked', isLocked);
-        }
-
-        function loadState() {
-            // Cargar usando la clave de la asignatura actual
-            const savedData = localStorage.getItem(getStorageKey());
-            const savedLock = localStorage.getItem('mac_groups_locked');
-            
-            if (savedData) {
-                currentData = JSON.parse(savedData);
-                // Asegurar que si hay grupos nuevos en initialData (como del 8 al 12), se agreguen aunque haya datos guardados
-                initialData.forEach(initGroup => {
-                    if (!currentData.find(g => g.id === initGroup.id)) {
-                        // Insertar justo antes del grupo "unassigned" para mantener el orden visual
-                        const unassignedIndex = currentData.findIndex(g => g.id === 'unassigned');
-                        if (unassignedIndex !== -1) {
-                            currentData.splice(unassignedIndex, 0, JSON.parse(JSON.stringify(initGroup)));
-                        } else {
-                            currentData.push(JSON.parse(JSON.stringify(initGroup)));
-                        }
-                    }
-                    
-                    // Detectar estudiantes nuevos e inyectarlos si no existen en la base de datos guardada localmente
-                    initGroup.students.forEach(initStudent => {
-                        let studentExists = false;
-                        currentData.forEach(g => {
-                            if (g.students.find(s => s.id === initStudent.id)) studentExists = true;
-                        });
-                        
-                        if (!studentExists) {
-                            const targetGroup = currentData.find(g => g.id === initGroup.id);
-                            if (targetGroup) targetGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
-                        }
-                    });
-                });
-            } else {
-                currentData = JSON.parse(JSON.stringify(initialData)); // Copia profunda
-            }
-            
-            if (savedLock !== null) {
-                isLocked = savedLock === 'true';
-            } else {
-                isLocked = false; // Por defecto desbloqueado
-            }
-        }
-
-        // Lógica del Modal
-        const modal = document.getElementById('password-modal');
-        const passInput = document.getElementById('password-input');
-        const modalTitle = document.getElementById('modal-title');
-        const modalDesc = document.getElementById('modal-desc');
-
-        function openLockModal() {
-            let pwd = localStorage.getItem(PASSWORD_KEY);
-            
-            if (!pwd) {
-                modalTitle.textContent = "Crear Contraseña";
-                modalDesc.textContent = "Crea una contraseña maestra para proteger los cambios.";
-            } else {
-                modalTitle.textContent = isLocked ? "Desbloquear Edición" : "Bloquear Edición";
-                modalDesc.textContent = isLocked ? "Ingresa la contraseña para permitir cambios." : "Ingresa la contraseña para proteger los grupos.";
-            }
-            
-            passInput.value = '';
-            modal.classList.remove('hidden');
-            setTimeout(() => passInput.focus(), 100);
-        }
-
-        function closeModal() {
-            modal.classList.add('hidden');
-        }
-
-        function submitPassword() {
-            const inputVal = passInput.value;
-            if (!inputVal) return;
-
-            let pwd = localStorage.getItem(PASSWORD_KEY);
-            
-            if (!pwd) {
-                // Configurar nueva contraseña por primera vez
-                localStorage.setItem(PASSWORD_KEY, inputVal);
-                isLocked = true;
-                applyLockState();
-                closeModal();
-            } else {
-                // Comprobar contraseña
-                if (inputVal === pwd) {
-                    isLocked = !isLocked;
-                    applyLockState();
-                    closeModal();
-                } else {
-                    alert("Contraseña incorrecta. Inténtalo de nuevo.");
-                    passInput.focus();
-                }
-            }
-        }
-
-        // Usar Enter en el input del modal
-        passInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                submitPassword();
-            }
+        // Escuchar "Enter" en el input
+        document.getElementById('password-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') window.submitPassword();
         });
 
-        // Aplicar los bloqueos visuales y lógicos
+
+        // ---- INTERFAZ Y DRAG AND DROP (Modificado para sincronización) ----
+
+        function renderGroups() {
+            const container = document.getElementById('groups-container');
+            container.innerHTML = '';
+
+            currentData.forEach(group => {
+                const windowEl = document.createElement('div');
+                windowEl.className = 'mac-window h-full flex flex-col';
+
+                const header = document.createElement('div');
+                header.className = 'px-4 py-3 border-b border-white/40 flex items-center bg-white/30 rounded-t-xl';
+                header.innerHTML = `
+                    <div class="flex gap-2 mr-4">
+                        <div class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-sm"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] shadow-sm"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] shadow-sm"></div>
+                    </div>
+                    <div class="flex-1 text-center pr-10">
+                        <h2 class="text-[14px] font-semibold text-gray-800">${group.title}</h2>
+                        <p class="text-[11px] text-gray-600 count-badge" id="count-${group.id}">${group.students.length} integrantes</p>
+                    </div>
+                `;
+
+                const topicContainer = document.createElement('div');
+                topicContainer.className = 'px-3 py-2 bg-white/40 border-b border-white/50';
+                if(group.id !== 'unassigned') {
+                    topicContainer.innerHTML = `<input type="text" class="topic-input w-full bg-white/60 border border-gray-200/60 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all font-medium" placeholder="Asignar tema de exposición..." value="${group.topic || ''}" onchange="saveState()">`;
+                } else {
+                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-1 text-center italic">Zona de reasignación (sin tema)</div>`;
+                }
+
+                const dropzone = document.createElement('div');
+                dropzone.className = 'dropzone';
+                dropzone.id = group.id;
+
+                dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
+                dropzone.addEventListener('dragenter', (e) => { e.preventDefault(); let t = e.target.closest('.dropzone'); if (t) t.classList.add('drag-over'); });
+                dropzone.addEventListener('dragleave', (e) => { let t = e.target.closest('.dropzone'); if (t && !t.contains(e.relatedTarget)) t.classList.remove('drag-over'); });
+                dropzone.addEventListener('drop', handleDrop);
+
+                group.students.forEach(student => { dropzone.appendChild(createStudentCard(student)); });
+
+                windowEl.appendChild(header);
+                windowEl.appendChild(topicContainer);
+                windowEl.appendChild(dropzone);
+                container.appendChild(windowEl);
+            });
+            
+            applyLockState();
+        }
+
+        function createStudentCard(student) {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.draggable = true;
+            card.dataset.id = student.id;
+            card.dataset.name = student.name;
+            card.innerHTML = `
+                <svg class="w-8 h-8 text-gray-400 bg-gray-50 rounded-full p-1 border border-gray-100" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-sm font-medium text-gray-800 truncate" title="${student.name}">${student.name}</p>
+                    <p class="text-xs text-gray-400 font-mono">ID: ${student.id.split('-')[0]}</p>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 cursor-grab" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            `;
+            card.addEventListener('dragstart', function(e) {
+                if(isLocked) { e.preventDefault(); return; }
+                draggedItem = this;
+                setTimeout(() => this.classList.add('dragging'), 0);
+            });
+            card.addEventListener('dragend', function(e) {
+                this.classList.remove('dragging');
+                this.style.opacity = '1';
+                draggedItem = null;
+                document.querySelectorAll('.dropzone').forEach(zone => zone.classList.remove('drag-over'));
+                
+                // Si alguien hizo un cambio en la nube mientras yo arrastraba, aplicar ese cambio ahora
+                if (pendingUpdate) {
+                    currentData = pendingUpdate;
+                    renderGroups();
+                    pendingUpdate = null;
+                }
+            });
+            return card;
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            let dropzone = e.target.closest('.dropzone');
+            
+            if (dropzone && draggedItem) {
+                dropzone.classList.remove('drag-over');
+                let item = draggedItem; 
+                
+                item.style.opacity = '0';
+                dropzone.appendChild(item);
+                setTimeout(() => { if (item) item.style.opacity = '1'; }, 50);
+
+                // Forzar conteo en vivo
+                document.querySelectorAll('.dropzone').forEach(zone => {
+                    const cnt = zone.querySelectorAll('.student-card').length;
+                    const badge = document.getElementById(`count-${zone.id}`);
+                    if (badge) badge.textContent = `${cnt} ${cnt === 1 ? 'integrante' : 'integrantes'}`;
+                });
+
+                // ESTO DESENCADENA LA SINCRONIZACIÓN A LOS DEMÁS DISPOSITIVOS
+                window.saveState();
+            }
+            return false;
+        }
+
         function applyLockState() {
             const cards = document.querySelectorAll('.student-card');
             const inputs = document.querySelectorAll('.topic-input');
@@ -695,40 +638,29 @@
                     input.setAttribute('readonly', 'true');
                     input.classList.add('opacity-70', 'cursor-not-allowed');
                 });
-                
-                // SVG Candado Cerrado
                 lockIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>`;
-                lockText.textContent = "Bloqueado";
-                lockText.classList.add('text-red-500');
-                lockText.classList.remove('text-green-700');
+                lockText.textContent = "Bloqueado para todos";
+                lockText.classList.add('text-red-500'); lockText.classList.remove('text-green-700');
             } else {
                 cards.forEach(card => card.setAttribute('draggable', 'true'));
                 inputs.forEach(input => {
                     input.removeAttribute('readonly');
                     input.classList.remove('opacity-70', 'cursor-not-allowed');
                 });
-                
-                // SVG Candado Abierto
                 lockIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>`;
                 lockText.textContent = "Desbloqueado";
-                lockText.classList.remove('text-red-500');
-                lockText.classList.add('text-green-700');
+                lockText.classList.remove('text-red-500'); lockText.classList.add('text-green-700');
             }
-            saveState(); // Guardamos en local storage el estado actual del candado
         }
 
-        // Cancelar drag si está bloqueado (doble seguridad)
-        document.addEventListener('dragstart', function(e) {
-            if(isLocked && e.target.classList.contains('student-card')) {
-                e.preventDefault();
-            }
-        });
-
-        // Inicializar la aplicación
-        document.addEventListener('DOMContentLoaded', () => {
-            loadState(); // Carga la asignatura por defecto (Familia)
-            renderGroups();
-        });
+        // Reloj
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const dateString = now.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+            document.getElementById('clock').textContent = `${dateString.replace('.', '')} ${timeString}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
 
     </script>
 </body>
