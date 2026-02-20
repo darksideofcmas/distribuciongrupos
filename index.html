@@ -138,8 +138,8 @@
     <!-- Pantalla de Carga -->
     <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loading-text" class="text-gray-800 font-medium text-lg">Conectando...</p>
-        <p class="text-gray-500 text-sm mt-2" id="loading-subtext">Verificando configuración</p>
+        <p id="loading-text" class="text-gray-800 font-medium text-lg">Iniciando Servidor...</p>
+        <p class="text-gray-500 text-sm mt-2" id="loading-subtext">Conectando con la base de datos de Firebase</p>
     </div>
 
     <!-- Menú Superior (Mac Menu Bar) -->
@@ -148,7 +148,7 @@
             <svg class="w-4 h-4 text-black" viewBox="0 0 384 512" fill="currentColor">
                 <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
             </svg>
-            <span class="font-bold cursor-default">Organizador Cloud</span>
+            <span class="font-bold cursor-default">Organizador en la Nube</span>
             <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded">Archivo</span>
             <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded">Edición</span>
             <span class="cursor-pointer hover:bg-white hover:bg-opacity-30 px-2 rounded" onclick="exportData()">Exportar Configuración</span>
@@ -166,7 +166,7 @@
     <main class="flex-1 mt-7 p-6 overflow-hidden flex flex-col gap-2">
         <div class="flex justify-between items-end">
             <div>
-                <h1 id="main-title" class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo Sincronizados</h1>
+                <h1 id="main-title" class="text-3xl font-semibold text-gray-900 drop-shadow-sm tracking-tight">Grupos de Trabajo</h1>
                 <p id="main-subtitle" class="text-gray-700 mt-1 font-medium">Grupo 38 de Derecho - Los cambios se guardan y reflejan para todos en tiempo real</p>
             </div>
         </div>
@@ -197,46 +197,44 @@
         </div>
     </div>
 
-    <!-- Firebase y Lógica -->
+    <!-- Script principal Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
-        // 🚨 CONFIGURACIÓN DE FIREBASE (TU PROYECTO) 🚨
-        // Reemplaza los valores de "PEGAR_AQUI" con los de tu consola de Firebase
+        // 🚨 CONFIGURACIÓN DE FIREBASE PARA GITHUB 🚨
+        // REEMPLAZA ESTO CON TUS CLAVES EXACTAS DE FIREBASE
         // ==========================================
         const firebaseConfig = {
-            apiKey: "PEGAR_AQUI",
-            authDomain: "PEGAR_AQUI",
-            projectId: "PEGAR_AQUI",
-            storageBucket: "PEGAR_AQUI",
-            messagingSenderId: "PEGAR_AQUI",
-            appId: "PEGAR_AQUI"
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
         };
 
-        // Verificación para saber si el usuario ya pegó sus claves
-        const isCloudEnv = firebaseConfig.apiKey !== "apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
+        // Comprobar si el usuario olvidó cambiar las claves
+        const isConfigured = firebaseConfig.apiKey !== "apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
   authDomain: "basesdedatos-8545b.firebaseapp.com",
   projectId: "basesdedatos-8545b",
   storageBucket: "basesdedatos-8545b.firebasestorage.app",
   messagingSenderId: "423832305020",
-  appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"" && firebaseConfig.apiKey !== "";
+  appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"";
 
-        // Variables Globales
         let isLocked = false;
         let globalPassword = "";
         let currentSubject = 'familia';
         let currentData = [];
         let draggedItem = null;
         let pendingUpdate = null;
-        
         let db, auth;
         let unsubscribeGroups = null;
         let unsubscribeGlobal = null;
 
-        // Datos Iniciales Base
+        // Datos Iniciales
         const initialData = [
             { id: "group-1", title: "Grupo 1", color: "blue", topic: "", students: [
                 { id: "91024", name: "William Fernando Guzman Cabrera" }, { id: "91670", name: "Aura Alejandra Rosas Arciniegas" }, { id: "91921", name: "Milciades Ducuara Rodriguez" }, { id: "92615", name: "Jose De Jesus Chavez Mendez" }, { id: "91918", name: "Wilson Steep Villarreal Cuellar" }
@@ -278,75 +276,21 @@
         ];
 
         // INICIALIZACIÓN
-        if (isCloudEnv) {
+        if (!isConfigured) {
+            document.getElementById('loading-text').textContent = "❌ ERROR: Faltan las claves";
+            document.getElementById('loading-subtext').innerHTML = "No has pegado tus claves de Firebase en la <b>línea 235</b> del código.";
+            // Si no está configurado, arrancar en modo local para que al menos pueda ver la interfaz
+            setTimeout(() => {
+                alert("La aplicación está en modo offline porque faltan las claves de Firebase.");
+                startLocalFallback();
+            }, 3000);
+        } else {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             initAuth();
-        } else {
-            document.getElementById('loading-text').textContent = "Iniciando Modo Local";
-            document.getElementById('loading-subtext').textContent = "Para sincronizar, añade tus credenciales de Firebase en el código.";
-            setTimeout(() => startLocalSync(), 1500);
         }
 
-        // ==========================================
-        // MODO LOCAL (Si no se configuran las claves)
-        // ==========================================
-        function startLocalSync() {
-            document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">Modo Local Offline</span>';
-            document.getElementById('main-subtitle').textContent = "Aviso: No se detectó configuración de Firebase. Los cambios solo se guardan en este navegador.";
-
-            const savedLock = localStorage.getItem('mac_groups_locked');
-            isLocked = savedLock === 'true';
-            globalPassword = localStorage.getItem('mac_groups_pwd') || "";
-
-            loadSubjectFromLocal(currentSubject);
-        }
-
-        function loadSubjectFromLocal(subject) {
-            const savedData = localStorage.getItem(`mac_groups_data_${subject}`);
-            let newData = [];
-            let isFirstTime = false;
-
-            if (savedData) {
-                newData = JSON.parse(savedData);
-            } else {
-                newData = JSON.parse(JSON.stringify(initialData));
-                isFirstTime = true;
-            }
-
-            // Inyectar nuevos estudiantes (como del grupo 8 al 12) si no estaban
-            if (!isFirstTime) {
-                initialData.forEach(initGroup => {
-                    let existingGroup = newData.find(g => g.id === initGroup.id);
-                    if (!existingGroup) {
-                        const unIndex = newData.findIndex(g => g.id === 'unassigned');
-                        if (unIndex !== -1) newData.splice(unIndex, 0, JSON.parse(JSON.stringify(initGroup)));
-                        else newData.push(JSON.parse(JSON.stringify(initGroup)));
-                    } else {
-                        initGroup.students.forEach(initStudent => {
-                            let studentExists = false;
-                            newData.forEach(g => { if (g.students.find(s => s.id === initStudent.id)) studentExists = true; });
-                            if (!studentExists) existingGroup.students.push(JSON.parse(JSON.stringify(initStudent)));
-                        });
-                    }
-                });
-            }
-
-            currentData = newData;
-            renderGroups();
-            
-            const loader = document.getElementById('loading-overlay');
-            if (loader && !loader.classList.contains('hidden')) {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.classList.add('hidden'), 500);
-            }
-            saveStateCore(newData);
-        }
-
-        // ==========================================
-        // MODO NUBE (Con tus claves de Firebase configuradas)
-        // ==========================================
         async function initAuth() {
             onAuthStateChanged(auth, (user) => {
                 if (user) startCloudSync();
@@ -355,18 +299,21 @@
             try {
                 await signInAnonymously(auth);
             } catch (error) {
-                console.error("Auth error:", error);
-                document.getElementById('loading-text').textContent = "Error de conexión. Revisa tus claves de Firebase.";
-                document.getElementById('loading-subtext').textContent = error.message;
+                console.error("Error conectando a Firebase:", error);
+                document.getElementById('loading-text').textContent = "Error de Conexión";
+                document.getElementById('loading-subtext').textContent = "Verifica que habilitaste inicio de sesión Anónimo y que autorizaste tu dominio de GitHub.";
+                setTimeout(() => startLocalFallback(), 4000);
             }
         }
 
+        // ==========================================
+        // MODO NUBE (FIREBASE)
+        // ==========================================
         function startCloudSync() {
             if (!auth.currentUser) return;
 
-            // Ruta oficial para tu base de datos
-            const globalRef = doc(db, 'mac_groups', 'global_settings');
-            
+            // Escuchar contraseñas
+            const globalRef = doc(db, 'organizador_grupos', 'config_global');
             unsubscribeGlobal = onSnapshot(globalRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -377,7 +324,7 @@
                     globalPassword = "";
                 }
                 applyLockState();
-            }, (error) => console.error("Error Global:", error));
+            });
 
             loadSubjectFromCloud(currentSubject);
         }
@@ -385,7 +332,7 @@
         function loadSubjectFromCloud(subject) {
             if (unsubscribeGroups) unsubscribeGroups(); 
             
-            const subjectRef = doc(db, 'mac_groups', `state_${subject}`);
+            const subjectRef = doc(db, 'organizador_grupos', `estado_${subject}`);
             
             unsubscribeGroups = onSnapshot(subjectRef, (docSnap) => {
                 let newData = [];
@@ -428,11 +375,31 @@
                     }
                 }
                 saveStateCore(newData);
-            }, (error) => console.error("Error Leyendo Sujetos:", error));
+            });
         }
 
         // ==========================================
-        // MOTOR UNIFICADO DE GUARDADO
+        // MODO LOCAL (Solo por si Firebase falla)
+        // ==========================================
+        function startLocalFallback() {
+            const loader = document.getElementById('loading-overlay');
+            if (loader) loader.classList.add('hidden');
+            
+            document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">OFFLINE</span>';
+            document.getElementById('main-subtitle').textContent = "Los cambios solo se guardan en tu computadora. Firebase no conectado.";
+
+            const savedData = localStorage.getItem(`mac_groups_data_${currentSubject}`);
+            if (savedData) currentData = JSON.parse(savedData);
+            else currentData = JSON.parse(JSON.stringify(initialData));
+
+            isLocked = localStorage.getItem('mac_groups_locked') === 'true';
+            globalPassword = localStorage.getItem('mac_groups_pwd') || "";
+
+            renderGroups();
+        }
+
+        // ==========================================
+        // GUARDADO UNIFICADO
         // ==========================================
         async function saveStateCore(stateArray = null) {
             let stateToSave = stateArray;
@@ -441,35 +408,32 @@
                 document.querySelectorAll('.mac-window').forEach(windowEl => {
                     let dropzone = windowEl.querySelector('.dropzone');
                     if(!dropzone) return;
-                    let groupId = dropzone.id;
-                    let title = windowEl.querySelector('h2').textContent;
-                    let topicInput = windowEl.querySelector('.topic-input');
-                    let topic = topicInput ? topicInput.value : "";
                     
                     let students = [];
                     dropzone.querySelectorAll('.student-card').forEach(card => {
                         students.push({ id: card.dataset.id, name: card.dataset.name });
                     });
                     
-                    stateToSave.push({ id: groupId, title: title, topic: topic, students: students });
+                    stateToSave.push({ 
+                        id: dropzone.id, 
+                        title: windowEl.querySelector('h2').textContent, 
+                        topic: windowEl.querySelector('.topic-input') ? windowEl.querySelector('.topic-input').value : "", 
+                        students: students 
+                    });
                 });
             }
 
-            if (isCloudEnv) {
-                if (!auth || !auth.currentUser) return;
-                const subjectRef = doc(db, 'mac_groups', `state_${currentSubject}`);
+            if (isConfigured && auth && auth.currentUser) {
                 try {
-                    await setDoc(subjectRef, { groups: stateToSave }, { merge: true });
-                } catch (error) {
-                    console.error("Error guardando:", error);
-                }
+                    await setDoc(doc(db, 'organizador_grupos', `estado_${currentSubject}`), { groups: stateToSave }, { merge: true });
+                } catch (e) { console.error("Error guardando en la nube:", e); }
             } else {
                 localStorage.setItem(`mac_groups_data_${currentSubject}`, JSON.stringify(stateToSave));
             }
         }
 
         // ==========================================
-        // FUNCIONES GLOBALES
+        // FUNCIONES DE INTERFAZ
         // ==========================================
         window.switchSubject = (subject) => {
             if (draggedItem) return;
@@ -477,8 +441,12 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${subject}`).classList.add('active');
             
-            if (isCloudEnv) loadSubjectFromCloud(currentSubject);
-            else loadSubjectFromLocal(currentSubject);
+            if (isConfigured && auth && auth.currentUser) loadSubjectFromCloud(currentSubject);
+            else {
+                const savedData = localStorage.getItem(`mac_groups_data_${currentSubject}`);
+                currentData = savedData ? JSON.parse(savedData) : JSON.parse(JSON.stringify(initialData));
+                renderGroups();
+            }
         };
 
         window.saveState = () => saveStateCore();
@@ -490,10 +458,10 @@
             
             if (!globalPassword) {
                 modalTitle.textContent = "Crear Contraseña Maestra";
-                modalDesc.textContent = "Nadie ha configurado una clave aún. Crea una para proteger el panel.";
+                modalDesc.textContent = "Crea una clave para proteger el panel para todos los usuarios.";
             } else {
                 modalTitle.textContent = isLocked ? "Desbloquear Edición" : "Bloquear Edición";
-                modalDesc.textContent = isLocked ? "Ingresa la clave del administrador para permitir cambios." : "Ingresa la clave para bloquear los grupos.";
+                modalDesc.textContent = isLocked ? "Ingresa la clave para permitir cambios." : "Ingresa la clave para bloquear.";
             }
             
             passInput.value = '';
@@ -504,27 +472,19 @@
         window.closeModal = () => document.getElementById('password-modal').classList.add('hidden');
 
         window.submitPassword = async () => {
-            const passInput = document.getElementById('password-input');
-            const inputVal = passInput.value;
+            const inputVal = document.getElementById('password-input').value;
             if (!inputVal) return;
 
-            if (isCloudEnv) {
-                const globalRef = doc(db, 'mac_groups', 'global_settings');
+            if (isConfigured && auth && auth.currentUser) {
+                const globalRef = doc(db, 'organizador_grupos', 'config_global');
                 if (!globalPassword) {
-                    try {
-                        await setDoc(globalRef, { password: inputVal, isLocked: true }, { merge: true });
-                        window.closeModal();
-                    } catch(e) { alert("Error al guardar clave en servidor"); }
+                    await setDoc(globalRef, { password: inputVal, isLocked: true }, { merge: true });
+                    window.closeModal();
+                } else if (inputVal === globalPassword) {
+                    await setDoc(globalRef, { isLocked: !isLocked }, { merge: true });
+                    window.closeModal();
                 } else {
-                    if (inputVal === globalPassword) {
-                        try {
-                            await setDoc(globalRef, { isLocked: !isLocked }, { merge: true });
-                            window.closeModal();
-                        } catch(e) { alert("Error conectando con servidor"); }
-                    } else {
-                        alert("Contraseña incorrecta.");
-                        passInput.focus();
-                    }
+                    alert("Contraseña incorrecta.");
                 }
             } else {
                 if (!globalPassword) {
@@ -534,25 +494,19 @@
                     isLocked = true;
                     applyLockState();
                     window.closeModal();
+                } else if (inputVal === globalPassword) {
+                    isLocked = !isLocked;
+                    localStorage.setItem('mac_groups_locked', isLocked.toString());
+                    applyLockState();
+                    window.closeModal();
                 } else {
-                    if (inputVal === globalPassword) {
-                        isLocked = !isLocked;
-                        localStorage.setItem('mac_groups_locked', isLocked.toString());
-                        applyLockState();
-                        window.closeModal();
-                    } else {
-                        alert("Contraseña incorrecta.");
-                        passInput.focus();
-                    }
+                    alert("Contraseña incorrecta.");
                 }
             }
         };
 
         window.exportData = () => {
-            let exportObj = {
-                asignatura: currentSubject === 'familia' ? 'Civil Familia' : 'Civil Obligaciones',
-                grupos: {}
-            };
+            let exportObj = { asignatura: currentSubject, grupos: {} };
             document.querySelectorAll('.mac-window').forEach(windowEl => {
                 let dropzone = windowEl.querySelector('.dropzone');
                 if(!dropzone) return;
@@ -568,13 +522,10 @@
             dlAnchorElem.click();
         };
 
-        document.getElementById('password-input').addEventListener('keypress', function (e) {
+        document.getElementById('password-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') window.submitPassword();
         });
 
-        // ==========================================
-        // INTERFAZ Y DRAG AND DROP
-        // ==========================================
         function renderGroups() {
             const container = document.getElementById('groups-container');
             container.innerHTML = '';
@@ -602,7 +553,7 @@
                 if(group.id !== 'unassigned') {
                     topicContainer.innerHTML = `<input type="text" class="topic-input w-full bg-white/60 border border-gray-200/60 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all font-medium" placeholder="Asignar tema de exposición..." value="${group.topic || ''}" onchange="saveState()">`;
                 } else {
-                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-1 text-center italic">Zona de reasignación (sin tema)</div>`;
+                    topicContainer.innerHTML = `<div class="text-xs text-gray-500 py-1 text-center italic">Zona de reasignación</div>`;
                 }
 
                 const dropzone = document.createElement('div');
@@ -621,7 +572,6 @@
                 windowEl.appendChild(dropzone);
                 container.appendChild(windowEl);
             });
-            
             applyLockState();
         }
 
@@ -644,24 +594,18 @@
                 draggedItem = this;
                 setTimeout(() => this.classList.add('dragging'), 0);
             });
-            card.addEventListener('dragend', function(e) {
+            card.addEventListener('dragend', function() {
                 this.classList.remove('dragging');
                 this.style.opacity = '1';
                 draggedItem = null;
                 document.querySelectorAll('.dropzone').forEach(zone => zone.classList.remove('drag-over'));
-                
-                if (pendingUpdate) {
-                    currentData = pendingUpdate;
-                    renderGroups();
-                    pendingUpdate = null;
-                }
+                if (pendingUpdate) { currentData = pendingUpdate; renderGroups(); pendingUpdate = null; }
             });
             return card;
         }
 
         function handleDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             let dropzone = e.target.closest('.dropzone');
             
             if (dropzone && draggedItem) {
@@ -694,7 +638,7 @@
                     input.classList.add('opacity-70', 'cursor-not-allowed');
                 });
                 lockIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>`;
-                lockText.textContent = isCloudEnv ? "Bloqueado para todos" : "Bloqueado (Solo Local)";
+                lockText.textContent = "Bloqueado para todos";
                 lockText.classList.add('text-red-500'); lockText.classList.remove('text-green-700');
             } else {
                 cards.forEach(card => card.setAttribute('draggable', 'true'));
@@ -708,7 +652,6 @@
             }
         }
 
-        // Reloj
         function updateClock() {
             const now = new Date();
             const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
