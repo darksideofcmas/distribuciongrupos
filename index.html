@@ -135,11 +135,11 @@
 </head>
 <body class="h-screen flex flex-col relative">
 
-    <!-- Pantalla de Carga -->
+    <!-- Pantalla de Carga Autodiagnóstica -->
     <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
-        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" id="loading-spinner"></div>
         <p id="loading-text" class="text-gray-800 font-medium text-lg">Iniciando Servidor...</p>
-        <p class="text-gray-500 text-sm mt-2" id="loading-subtext">Conectando con la base de datos de Firebase</p>
+        <p class="text-gray-500 text-sm mt-2 text-center px-4 max-w-md" id="loading-subtext">Conectando con la base de datos de Firebase</p>
     </div>
 
     <!-- Menú Superior (Mac Menu Bar) -->
@@ -216,13 +216,7 @@
             appId: "TU_APP_ID"
         };
 
-        // Comprobar si el usuario olvidó cambiar las claves
-        const isConfigured = firebaseConfig.apiKey !== "apiKey: "AIzaSyDCHQ-yK7UjldoqwXJ8OoBSGaFpvlI2QoQ",
-  authDomain: "basesdedatos-8545b.firebaseapp.com",
-  projectId: "basesdedatos-8545b",
-  storageBucket: "basesdedatos-8545b.firebasestorage.app",
-  messagingSenderId: "423832305020",
-  appId: "1:423832305020:web:2a6d2a7599bfaa43e838f9"";
+        const isConfigured = firebaseConfig.apiKey !== "TU_API_KEY" && firebaseConfig.apiKey !== "";
 
         let isLocked = false;
         let globalPassword = "";
@@ -277,18 +271,38 @@
 
         // INICIALIZACIÓN
         if (!isConfigured) {
+            document.getElementById('loading-spinner').classList.add('hidden');
             document.getElementById('loading-text').textContent = "❌ ERROR: Faltan las claves";
-            document.getElementById('loading-subtext').innerHTML = "No has pegado tus claves de Firebase en la <b>línea 235</b> del código.";
-            // Si no está configurado, arrancar en modo local para que al menos pueda ver la interfaz
+            document.getElementById('loading-subtext').innerHTML = "No has pegado tus claves de Firebase en el código.";
             setTimeout(() => {
-                alert("La aplicación está en modo offline porque faltan las claves de Firebase.");
+                alert("La aplicación arrancará en modo offline porque faltan las claves de Firebase.");
                 startLocalFallback();
-            }, 3000);
+            }, 4000);
         } else {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            initAuth();
+            // TIMEOUT DE SEGURIDAD PARA EVITAR BUCLE INFINITO
+            window.firebaseTimeout = setTimeout(() => {
+                const loader = document.getElementById('loading-overlay');
+                if (loader && !loader.classList.contains('hidden')) {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    document.getElementById('loading-text').textContent = "Tiempo agotado ⏱️";
+                    document.getElementById('loading-subtext').innerHTML = "Firebase no respondió.<br><br><b>¿Qué pudo pasar?</b><br>1. No has creado la base de datos 'Firestore' en Firebase.<br>2. Las Reglas de Seguridad de Firestore están bloqueando el acceso.<br><br><i>Iniciando modo local...</i>";
+                    setTimeout(() => startLocalFallback(), 7000);
+                }
+            }, 10000);
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                initAuth();
+            } catch (err) {
+                console.error("Error inicializando Firebase:", err);
+                clearTimeout(window.firebaseTimeout);
+                document.getElementById('loading-spinner').classList.add('hidden');
+                document.getElementById('loading-text').textContent = "Error de sintaxis ⚠️";
+                document.getElementById('loading-subtext').textContent = "Revisa cómo pegaste las claves de Firebase, es posible que hayas borrado una coma o unas comillas.";
+                setTimeout(() => startLocalFallback(), 5000);
+            }
         }
 
         async function initAuth() {
@@ -299,10 +313,12 @@
             try {
                 await signInAnonymously(auth);
             } catch (error) {
-                console.error("Error conectando a Firebase:", error);
-                document.getElementById('loading-text').textContent = "Error de Conexión";
-                document.getElementById('loading-subtext').textContent = "Verifica que habilitaste inicio de sesión Anónimo y que autorizaste tu dominio de GitHub.";
-                setTimeout(() => startLocalFallback(), 4000);
+                console.error("Error de Autenticación:", error);
+                clearTimeout(window.firebaseTimeout);
+                document.getElementById('loading-spinner').classList.add('hidden');
+                document.getElementById('loading-text').textContent = "Error de Conexión 🚫";
+                document.getElementById('loading-subtext').textContent = "Verifica que habilitaste el inicio de sesión 'Anónimo' en Firebase y que autorizaste el dominio de GitHub.";
+                setTimeout(() => startLocalFallback(), 5000);
             }
         }
 
@@ -312,7 +328,6 @@
         function startCloudSync() {
             if (!auth.currentUser) return;
 
-            // Escuchar contraseñas
             const globalRef = doc(db, 'organizador_grupos', 'config_global');
             unsubscribeGlobal = onSnapshot(globalRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -324,6 +339,8 @@
                     globalPassword = "";
                 }
                 applyLockState();
+            }, (error) => {
+                console.error("Error Global Snapshot:", error);
             });
 
             loadSubjectFromCloud(currentSubject);
@@ -370,23 +387,34 @@
                     
                     const loader = document.getElementById('loading-overlay');
                     if (loader && !loader.classList.contains('hidden')) {
+                        clearTimeout(window.firebaseTimeout); // Conexión exitosa, limpiamos el timeout
                         loader.style.opacity = '0';
                         setTimeout(() => loader.classList.add('hidden'), 500);
                     }
                 }
                 saveStateCore(newData);
+            }, (error) => {
+                console.error("Error Firestore Snapshot:", error);
+                clearTimeout(window.firebaseTimeout);
+                const loader = document.getElementById('loading-overlay');
+                if (loader && !loader.classList.contains('hidden')) {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    document.getElementById('loading-text').textContent = "Acceso Denegado 🔒";
+                    document.getElementById('loading-subtext').textContent = "Ve a tu consola de Firebase -> Firestore Database -> Reglas. Cambia a: allow read, write: if true;";
+                    setTimeout(() => startLocalFallback(), 6000);
+                }
             });
         }
 
         // ==========================================
-        // MODO LOCAL (Solo por si Firebase falla)
+        // MODO LOCAL (Fallback de seguridad)
         // ==========================================
         function startLocalFallback() {
             const loader = document.getElementById('loading-overlay');
             if (loader) loader.classList.add('hidden');
             
             document.getElementById('main-title').innerHTML = 'Grupos de Trabajo <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-300 font-normal align-middle">OFFLINE</span>';
-            document.getElementById('main-subtitle').textContent = "Los cambios solo se guardan en tu computadora. Firebase no conectado.";
+            document.getElementById('main-subtitle').textContent = "Problemas conectando al servidor. Los cambios solo se guardan en tu computadora actual.";
 
             const savedData = localStorage.getItem(`mac_groups_data_${currentSubject}`);
             if (savedData) currentData = JSON.parse(savedData);
